@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Forex Trading - Mirrorwavetrades{% endblock %}
+{% block title %}Forex Trading - Mirrormarkettrading{% endblock %}
 {% block extra_css %}
 <style>
 /* ── Reset & Base ── */
@@ -7,7 +7,7 @@
 
 /* ── Hero ── */
 .hero-forex {
-  background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
+  background: var(--bg-elevated); border-bottom: 1px solid var(--border);
 }
 
 .hero-forex .hero-inner {
@@ -28,15 +28,15 @@
   text-transform: uppercase;
   letter-spacing: .05em;
   margin-bottom: 1.5rem;
-  border: 1px solid rgba(255,255,255,.2);
-  background: rgba(255,255,255,.1);
-  color: #fff;
+  border: 1px solid var(--border);
+  background: var(--hover-2);
+  color: var(--text-main);
 }
 
 .badge-dot {
   width: .5rem;
   height: .5rem;
-  background: #6ee7b7;
+  background: var(--pos);
   border-radius: 9999px;
   animation: pulse 1.5s infinite;
 }
@@ -50,14 +50,14 @@
   font-family: 'Georgia', 'Times New Roman', serif;
   font-size: clamp(2.2rem, 6vw, 3.75rem);
   line-height: 1.15;
-  color: #fff;
+  color: var(--text-main);
   margin: 0 0 1rem;
 }
 
-.hero-title span { color: #6ee7b7; }
+.hero-title span { color: var(--pos); }
 
 .hero-sub {
-  color: rgba(255,255,255,.65);
+  color: var(--text-muted);
   font-size: clamp(.9rem, 2.5vw, 1.05rem);
   max-width: 38rem;
   margin: 0 auto 2.25rem;
@@ -75,7 +75,7 @@
 
 .btn-white {
   padding: .85rem 2rem;
-  background: #fff;
+  background: var(--bg-card);
   color: #111827;
   font-weight: 700;
   font-size: .875rem;
@@ -84,13 +84,13 @@
   transition: background .15s, transform .15s;
   display: inline-block;
 }
-.btn-white:hover { background: #f3f4f6; transform: translateY(-1px); }
+.btn-white:hover { background: var(--text-main); transform: translateY(-1px); }
 
 .btn-ghost {
   padding: .85rem 2rem;
-  background: rgba(255,255,255,.1);
-  border: 1px solid rgba(255,255,255,.2);
-  color: #fff;
+  background: var(--hover-2);
+  border: 1px solid var(--border);
+  color: var(--text-main);
   font-weight: 700;
   font-size: .875rem;
   border-radius: .75rem;
@@ -98,7 +98,7 @@
   transition: background .15s, transform .15s;
   display: inline-block;
 }
-.btn-ghost:hover { background: rgba(255,255,255,.2); transform: translateY(-1px); }
+.btn-ghost:hover { background: var(--tint-strong); transform: translateY(-1px); }
 
 /* Stats grid */
 .hero-stats {
@@ -114,22 +114,22 @@
 }
 
 .glass-chip {
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.15);
+  background: var(--hover-2);
+  border: 1px solid var(--border);
   border-radius: .875rem;
   padding: 1rem;
   text-align: center;
 }
 
 .glass-chip .stat-val {
-  color: #fff;
+  color: var(--text-main);
   font-weight: 700;
   font-size: clamp(1.1rem, 4vw, 1.4rem);
   line-height: 1;
 }
 
 .glass-chip .stat-label {
-  color: rgba(255,255,255,.5);
+  color: var(--text-muted);
   font-size: .68rem;
   margin-top: .35rem;
 }
@@ -156,7 +156,7 @@
 .section-header h2 {
   font-family: 'Georgia', serif;
   font-size: clamp(1.25rem, 4vw, 1.6rem);
-  color: #fff;
+  color: var(--text-main);
   margin: 0;
 }
 
@@ -197,7 +197,7 @@
 }
 
 .pair-row { border-bottom: 1px solid var(--border); transition: background .15s; }
-.pair-row:hover { background: rgba(255,255,255,.03); }
+.pair-row:hover { background: var(--hover); }
 .pair-row:last-child { border-bottom: none; }
 
 .pair-row td {
@@ -206,14 +206,14 @@
   white-space: nowrap;
 }
 
-.pair-name { font-weight: 700; color: #fff; }
-.pair-price { color: #c7ccd6; font-family: 'Courier New', monospace; }
-.pair-change-up { color: #4ade80; font-weight: 700; }
-.pair-change-dn { color: #f87171; font-weight: 700; }
+.pair-name { font-weight: 700; color: var(--text-main); }
+.pair-price { color: var(--text-muted); font-family: 'Courier New', monospace; }
+.pair-change-up { color: var(--pos); font-weight: 700; }
+.pair-change-dn { color: var(--neg); font-weight: 700; }
 
 .spread-pill {
-  background: rgba(34,197,94,.15);
-  color: #4ade80;
+  background: var(--pos-bg);
+  color: var(--pos);
   padding: .2rem .55rem;
   border-radius: 9999px;
   font-size: .68rem;
@@ -225,7 +225,7 @@
 .btn-primary {
   padding: .65rem 1.25rem;
   background: #059669;
-  color: #fff;
+  color: var(--text-main);
   font-weight: 700;
   font-size: .8rem;
   border-radius: .6rem;
@@ -234,7 +234,7 @@
   display: inline-block;
   white-space: nowrap;
 }
-.btn-primary:hover { background: #047857; transform: translateY(-1px); }
+.btn-primary:hover { background: var(--pos); transform: translateY(-1px); }
 
 /* ── Features Section ── */
 .section-features {
@@ -248,7 +248,7 @@
 .section-center h2 {
   font-family: 'Georgia', serif;
   font-size: clamp(1.4rem, 4vw, 2rem);
-  color: #fff;
+  color: var(--text-main);
   margin: 0 0 .4rem;
 }
 .section-center p { color: var(--text-muted); font-size: .85rem; margin: 0; }
@@ -274,7 +274,7 @@
   padding: 1.5rem;
   transition: box-shadow .2s, transform .2s, border-color .2s;
 }
-.feature-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,.4); border-color: rgba(16,185,129,.3); transform: translateY(-2px); }
+.feature-card:hover { box-shadow:var(--shadow); border-color: var(--pos-line); transform: translateY(-2px); }
 
 .icon-wrap {
   width: 2.6rem;
@@ -287,7 +287,7 @@
   font-size: 1rem;
 }
 
-.feature-card h3 { font-size: .95rem; font-weight: 700; color: #fff; margin: 0 0 .4rem; }
+.feature-card h3 { font-size: .95rem; font-weight: 700; color: var(--text-main); margin: 0 0 .4rem; }
 .feature-card p  { font-size: .8rem; color: var(--text-muted); margin: 0; line-height: 1.65; }
 
 /* ── CTA Bottom ── */
@@ -298,7 +298,7 @@
 .section-cta h2 {
   font-family: 'Georgia', serif;
   font-size: clamp(1.4rem, 4vw, 2rem);
-  color: #fff;
+  color: var(--text-main);
   margin: 0 0 .75rem;
 }
 .section-cta p { color: var(--text-muted); font-size: .9rem; margin: 0 0 2rem; }
@@ -313,7 +313,7 @@
 .btn-cta-primary {
   padding: 1rem 2.25rem;
   background: #059669;
-  color: #fff;
+  color: var(--text-main);
   font-weight: 700;
   font-size: .95rem;
   border-radius: .875rem;
@@ -323,12 +323,12 @@
   align-items: center;
   gap: .5rem;
 }
-.btn-cta-primary:hover { background: #047857; transform: translateY(-1px); }
+.btn-cta-primary:hover { background: var(--pos); transform: translateY(-1px); }
 
 .btn-cta-outline {
   padding: 1rem 2.25rem;
   background: transparent;
-  color: #c7ccd6;
+  color: var(--text-muted);
   font-weight: 700;
   font-size: .95rem;
   border-radius: .875rem;
@@ -337,7 +337,7 @@
   transition: border-color .15s, transform .15s;
   display: inline-block;
 }
-.btn-cta-outline:hover { border-color: #4b5563; transform: translateY(-1px); }
+.btn-cta-outline:hover { border-color: var(--border-strong); transform: translateY(-1px); }
 
 /* ── Utility ── */
 @media (max-width: 480px) {
@@ -469,48 +469,48 @@
     <div class="features-grid">
 
       <div class="feature-card">
-        <div class="icon-wrap" style="background:rgba(5,150,105,.14);">
-          <i class="fas fa-water" style="color:#34d399;"></i>
+        <div class="icon-wrap" style="background:var(--pos-bg);">
+          <i class="fas fa-water" style="color:var(--pos);"></i>
         </div>
         <h3>Deep Liquidity</h3>
         <p>Institutional liquidity from tier-1 banks ensures tight spreads and seamless order fills at any size.</p>
       </div>
 
       <div class="feature-card">
-        <div class="icon-wrap" style="background:rgba(37,99,235,.14);">
-          <i class="fas fa-sliders-h" style="color:#60a5fa;"></i>
+        <div class="icon-wrap" style="background:var(--tint);">
+          <i class="fas fa-sliders-h" style="color:var(--text-main);"></i>
         </div>
         <h3>Flexible Leverage</h3>
         <p>Choose leverage from 1:1 to 1:500 depending on your strategy and risk tolerance across all pairs.</p>
       </div>
 
       <div class="feature-card">
-        <div class="icon-wrap" style="background:rgba(124,58,237,.14);">
-          <i class="fas fa-clock" style="color:#c084fc;"></i>
+        <div class="icon-wrap" style="background:var(--tint);">
+          <i class="fas fa-clock" style="color:var(--text-main);"></i>
         </div>
         <h3>24/5 Markets</h3>
         <p>Trade around major session opens — London, New York, Tokyo, and Sydney — five days a week.</p>
       </div>
 
       <div class="feature-card">
-        <div class="icon-wrap" style="background:rgba(234,88,12,.14);">
-          <i class="fas fa-globe" style="color:#fb923c;"></i>
+        <div class="icon-wrap" style="background:var(--neg-bg);">
+          <i class="fas fa-globe" style="color:var(--warn);"></i>
         </div>
         <h3>50+ Pairs</h3>
         <p>Majors, minors, and exotic pairs. Trade emerging market currencies alongside the G10 with ease.</p>
       </div>
 
       <div class="feature-card">
-        <div class="icon-wrap" style="background:rgba(220,38,38,.14);">
-          <i class="fas fa-robot" style="color:#f87171;"></i>
+        <div class="icon-wrap" style="background:var(--neg-bg);">
+          <i class="fas fa-robot" style="color:var(--neg);"></i>
         </div>
         <h3>Automated Forex Bots</h3>
         <p>Deploy our AI trading bots on your chosen forex pairs and earn consistent daily returns automatically.</p>
       </div>
 
       <div class="feature-card">
-        <div class="icon-wrap" style="background:rgba(8,145,178,.14);">
-          <i class="fas fa-chart-bar" style="color:#22d3ee;"></i>
+        <div class="icon-wrap" style="background:var(--tint);">
+          <i class="fas fa-chart-bar" style="color:var(--text-main);"></i>
         </div>
         <h3>Economic Calendar</h3>
         <p>Built-in economic calendar with impact ratings. Stay ahead of NFP, FOMC, and other high-impact events.</p>
@@ -523,7 +523,7 @@
 <!-- ── BOTTOM CTA ── -->
 <section class="section-cta">
   <h2>Trade Forex Smarter</h2>
-  <p>Join thousands of forex traders. {% if platform_settings.minimum_deposit > 0 %}Start with as little as ${{ platform_settings.minimum_deposit|floatformat:"-2" }}.{% else %}Start with any amount — no minimum deposit.{% endif %}</p>
+  <p>Join thousands of forex traders. Start with any amount — no minimum deposit.</p>
   <div class="cta-buttons">
     <a href="{% url 'register' %}" class="btn-cta-primary">
       Open Account <i class="fas fa-arrow-right"></i>

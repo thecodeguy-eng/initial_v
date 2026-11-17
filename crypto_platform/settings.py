@@ -14,7 +14,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-your-secret-key-here'
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 # ALLOWED_HOSTS
-ALLOWED_HOSTS = ['.vercel.app', '.now.sh', 'localhost', '127.0.0.1', '.com']
+ALLOWED_HOSTS = ['.vercel.app', '.now.sh', 'localhost', '127.0.0.1', 'mirrormarkettrading.com', 'www.mirrormarkettrading.com', '.com']
 
 # Application definition
 INSTALLED_APPS = [
@@ -152,6 +152,8 @@ SESSION_SAVE_EVERY_REQUEST = True
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
+    'https://mirrormarkettrading.com',
+    'https://www.mirrormarkettrading.com',
     'https://*.vercel.app',
     'https://*.now.sh',
 ]
@@ -169,6 +171,8 @@ if not DEBUG:
     
 # CSRF Trusted Origins for Vercel
 CSRF_TRUSTED_ORIGINS = [
+    'https://mirrormarkettrading.com',
+    'https://www.mirrormarkettrading.com',
     'https://*.vercel.app',
     'https://*.now.sh',
 ]
@@ -188,12 +192,16 @@ MESSAGE_TAGS = {
 }
 
 # ============================================
-# BREVO (SENDINBLUE) EMAIL CONFIGURATION
+# RESEND (TRANSACTIONAL EMAIL) CONFIGURATION
 # ============================================
-BREVO_API_KEY = config('BREVO_API_KEY', default='')
-BREVO_SENDER_EMAIL = config('BREVO_SENDER_EMAIL', default='noreply@Mirrorwavetrades.com')
-BREVO_SENDER_NAME = config('BREVO_SENDER_NAME', default='Mirrorwavetrades')
+RESEND_API_KEY = config('RESEND_API_KEY', default='')
+RESEND_SENDER_EMAIL = config('RESEND_SENDER_EMAIL', default='no-reply@mirrormarkettrading.com')
+RESEND_SENDER_NAME = config('RESEND_SENDER_NAME', default='Mirrormarkettrading')
+
+# Inboxes that get a notification on every new registration / support message.
 ADMIN_NOTIFICATION_EMAIL = config('ADMIN_NOTIFICATION_EMAIL', default='')
+ADMIN_NOTIFICATION_EMAIL_TWO = config('ADMIN_NOTIFICATION_EMAIL_TWO', default='')
+ADMIN_NOTIFICATION_EMAILS = [e.strip() for e in (ADMIN_NOTIFICATION_EMAIL, ADMIN_NOTIFICATION_EMAIL_TWO) if e and e.strip()]
 
 # Logging Configuration
 LOGGING = {
@@ -230,5 +238,3 @@ LOGGING = {
 # database (supabase): udsn.defence@gmail.com
 
 # cloudinary: ibchukwugirim@gmail.com (shared)
-
-# brevo email vercel: mainwesthern@gmail.com

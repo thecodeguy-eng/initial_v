@@ -971,7 +971,6 @@ def admin_settings(request):
         
         if action == 'update_settings':
             settings.maintenance_mode = request.POST.get('maintenance_mode') == 'on'
-            settings.minimum_deposit = Decimal(request.POST.get('minimum_deposit'))
             settings.minimum_withdrawal = Decimal(request.POST.get('minimum_withdrawal'))
             settings.trading_fee_percentage = Decimal(request.POST.get('trading_fee'))
             settings.withdrawal_fee_percentage = Decimal(request.POST.get('withdrawal_fee'))

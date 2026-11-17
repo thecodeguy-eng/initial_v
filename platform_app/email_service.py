@@ -11,20 +11,20 @@ logger = logging.getLogger(__name__)
 # Fallback used only if a caller doesn't pass an absolute logo URL built from
 # the current request (register() does; anything calling this off-request
 # falls back to the known production host).
-DEFAULT_LOGO_URL = "https://mirrorwavetrades.vercel.app/static/platform_app/img/logo-512.png"
+DEFAULT_LOGO_URL = "https://mirrormarkettrading.com/static/platform_app/img/logo-512.png"
 
 BRAND = {
-    'bg': '#05070a',
-    'card': '#0d1117',
-    'card_alt': '#111827',
-    'border': '#1f2937',
-    'accent': '#38bdf8',
-    'primary': '#2563eb',
-    'text_main': '#f3f4f6',
-    'text_muted': '#9aa3b2',
-    'text_faint': '#64748b',
-    'danger': '#ef4444',
-    'success': '#22c55e',
+    'bg': '#0a0a0a',
+    'card': '#141414',
+    'card_alt': '#1b1b1b',
+    'border': '#2a2a2a',
+    'accent': '#ffffff',
+    'primary': '#ffffff',
+    'text_main': '#fafafa',
+    'text_muted': '#a3a3a0',
+    'text_faint': '#737370',
+    'danger': '#f87171',
+    'success': '#4ade80',
 }
 
 
@@ -48,7 +48,7 @@ def _email_shell(preheader, body_html, logo_url=None):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="color-scheme" content="dark">
         <meta name="supported-color-schemes" content="dark">
-        <title>Mirrorwavetrades</title>
+        <title>Mirrormarkettrading</title>
         <!--[if mso]>
         <style>table, td {{ font-family: Arial, sans-serif; }}</style>
         <![endif]-->
@@ -66,10 +66,10 @@ def _email_shell(preheader, body_html, logo_url=None):
                         <!-- Header -->
                         <tr>
                             <td align="center" style="padding: 32px 24px 24px 24px; border-bottom:1px solid {b['border']};">
-                                <img src="{logo_url}" width="44" height="44" alt="Mirrorwavetrades"
+                                <img src="{logo_url}" width="44" height="44" alt="Mirrormarkettrading"
                                      style="display:block; border-radius:10px; margin:0 auto 12px auto;">
                                 <span style="font-family: Arial, Helvetica, sans-serif; font-size:18px; font-weight:bold; color:{b['text_main']};">
-                                    Mirrorwavetrades
+                                    Mirrormarkettrading
                                 </span>
                             </td>
                         </tr>
@@ -88,7 +88,7 @@ def _email_shell(preheader, body_html, logo_url=None):
                                     Need help? Our support team is available 24/7 via live chat on the platform.
                                 </p>
                                 <p style="color:{b['text_faint']}; font-size:11px; margin:0;">
-                                    &copy; {timezone.now().year} Mirrorwavetrades. All rights reserved.
+                                    &copy; {timezone.now().year} Mirrormarkettrading. All rights reserved.
                                 </p>
                             </td>
                         </tr>
@@ -109,7 +109,7 @@ def _button(label, url, brand):
             <td align="center" bgcolor="{brand['primary']}" style="border-radius:8px;">
                 <a href="{url}" target="_blank"
                    style="display:inline-block; padding:14px 32px; font-family: Arial, Helvetica, sans-serif;
-                          font-size:15px; font-weight:bold; color:#ffffff; text-decoration:none;">
+                          font-size:15px; font-weight:bold; color:#0a0a0a; text-decoration:none;">
                     {label}
                 </a>
             </td>
@@ -118,65 +118,61 @@ def _button(label, url, brand):
     """
 
 
-class BrevoEmailService:
-    """Service for sending emails via Brevo API"""
+class ResendEmailService:
+    """Service for sending emails via the Resend API (https://resend.com)."""
 
     def __init__(self):
-        self.api_key = settings.BREVO_API_KEY
-        self.api_url = "https://api.brevo.com/v3/smtp/email"
-        self.sender_email = settings.BREVO_SENDER_EMAIL
-        self.sender_name = settings.BREVO_SENDER_NAME
-        self.admin_email = getattr(settings, 'ADMIN_NOTIFICATION_EMAIL', '')
+        self.api_key = settings.RESEND_API_KEY
+        self.api_url = "https://api.resend.com/emails"
+        self.sender_email = settings.RESEND_SENDER_EMAIL
+        self.sender_name = settings.RESEND_SENDER_NAME
+        self.admin_emails = list(getattr(settings, 'ADMIN_NOTIFICATION_EMAILS', []))
 
     def send_email(self, to_email, to_name, subject, html_content):
         """
-        Send email via Brevo API
+        Send an email through Resend.
 
         Args:
-            to_email: Recipient email address
-            to_name: Recipient name
+            to_email: Recipient address, or a list of addresses
+            to_name: Recipient name (used only for logging; Resend takes bare addresses)
             subject: Email subject
-            html_content: HTML content of email
+            html_content: HTML body
 
         Returns:
-            dict: Response from Brevo API or error dict
+            dict: {'success': True, ...} or {'success': False, 'error': ...}
         """
-        headers = {
-            'accept': 'application/json',
-            'api-key': self.api_key,
-            'content-type': 'application/json'
-        }
+        recipients = [to_email] if isinstance(to_email, str) else list(to_email)
+        if not self.api_key:
+            logger.error("RESEND_API_KEY is not set - cannot send email to %s", recipients)
+            return {'success': False, 'error': 'RESEND_API_KEY not configured'}
 
+        headers = {
+            'Authorization': f'Bearer {self.api_key}',
+            'Content-Type': 'application/json',
+        }
         payload = {
-            'sender': {
-                'name': self.sender_name,
-                'email': self.sender_email
-            },
-            'to': [
-                {
-                    'email': to_email,
-                    'name': to_name
-                }
-            ],
+            'from': f'{self.sender_name} <{self.sender_email}>',
+            'to': recipients,
             'subject': subject,
-            'htmlContent': html_content
+            'html': html_content,
         }
 
         try:
             response = requests.post(self.api_url, json=payload, headers=headers, timeout=10)
             response.raise_for_status()
-
-            logger.info(f"Email sent successfully to {to_email}")
-            return {'success': True, 'message': 'Email sent successfully'}
-
+            logger.info("Email sent successfully to %s", recipients)
+            return {'success': True, 'message': 'Email sent successfully', 'id': response.json().get('id')}
         except requests.exceptions.RequestException as e:
-            logger.error(f"Failed to send email to {to_email}: {str(e)}")
+            detail = ''
+            if getattr(e, 'response', None) is not None:
+                detail = f' - {e.response.text[:300]}'
+            logger.error("Failed to send email to %s: %s%s", recipients, e, detail)
             return {'success': False, 'error': str(e)}
 
     def send_password_reset_email(self, user_email, user_name, reset_code, logo_url=None):
         """Send password reset code email"""
         b = BRAND
-        subject = "Password Reset Code - Mirrorwavetrades"
+        subject = "Password Reset Code - Mirrormarkettrading"
 
         body_html = f"""
             <h2 style="color:{b['text_main']}; margin:0 0 14px 0; font-size:22px; text-align:center;">
@@ -218,8 +214,8 @@ class BrevoEmailService:
     def send_welcome_email(self, user_email, user_name, dashboard_url=None, logo_url=None):
         """Send a welcome email right after a new account is created."""
         b = BRAND
-        subject = "Welcome to Mirrorwavetrades"
-        dashboard_url = dashboard_url or "https://mirrorwavetrades.vercel.app/dashboard/"
+        subject = "Welcome to Mirrormarkettrading"
+        dashboard_url = dashboard_url or "https://mirrormarkettrading.com/dashboard/"
 
         steps = [
             ("1", "Complete your profile", "Confirm your details so we can personalize your dashboard."),
@@ -241,7 +237,7 @@ class BrevoEmailService:
                 Welcome aboard, {escape(user_name)}!
             </h2>
             <p style="color:{b['text_muted']}; font-size:15px; line-height:1.6; margin:0 0 26px 0; text-align:center;">
-                Your Mirrorwavetrades account is ready. You now have access to live markets,
+                Your Mirrormarkettrading account is ready. You now have access to live markets,
                 copy trading, AI trading bots, and 24/7 global market access.
             </p>
 
@@ -257,13 +253,13 @@ class BrevoEmailService:
             </table>
         """
 
-        return self.send_email(user_email, user_name, subject, _email_shell(f"Welcome to Mirrorwavetrades, {escape(user_name)}", body_html, logo_url))
+        return self.send_email(user_email, user_name, subject, _email_shell(f"Welcome to Mirrormarkettrading, {escape(user_name)}", body_html, logo_url))
 
     def send_deposit_reminder_email(self, user_email, user_name, deposit_url=None, logo_url=None):
         """Friendly nudge to make a first deposit, sent shortly after signup."""
         b = BRAND
-        subject = "Fund your account to start trading - Mirrorwavetrades"
-        deposit_url = deposit_url or "https://mirrorwavetrades.vercel.app/deposit/"
+        subject = "Fund your account to start trading - Mirrormarkettrading"
+        deposit_url = deposit_url or "https://mirrormarkettrading.com/deposit/"
 
         body_html = f"""
             <h2 style="color:{b['text_main']}; margin:0 0 14px 0; font-size:22px; text-align:center;">
@@ -283,11 +279,11 @@ class BrevoEmailService:
     def send_admin_new_registration_email(self, username, email, account_id, country, registered_at, admin_url=None, logo_url=None):
         """Notify the admin inbox whenever a new account is created."""
         b = BRAND
-        if not self.admin_email:
-            logger.warning("ADMIN_NOTIFICATION_EMAIL is not set - skipping admin registration notice")
+        if not self.admin_emails:
+            logger.warning("No ADMIN_NOTIFICATION_EMAIL is set - skipping admin registration notice")
             return {'success': False, 'error': 'ADMIN_NOTIFICATION_EMAIL not configured'}
 
-        subject = f"New registration: {username} - Mirrorwavetrades"
+        subject = f"New registration: {username} - Mirrormarkettrading"
 
         def row(label, value, bold=False):
             weight = 'bold' if bold else 'normal'
@@ -326,16 +322,16 @@ class BrevoEmailService:
             {cta_html}
         """
 
-        return self.send_email(self.admin_email, 'Admin', subject, _email_shell(f"New registration: {escape(username)}", body_html, logo_url))
+        return self.send_email(self.admin_emails, 'Admin', subject, _email_shell(f"New registration: {escape(username)}", body_html, logo_url))
 
     def send_admin_support_message_email(self, username, message_preview, chat_url=None, logo_url=None):
         """Notify the admin inbox when a client sends a support chat message."""
         b = BRAND
-        if not self.admin_email:
-            logger.warning("ADMIN_NOTIFICATION_EMAIL is not set - skipping support message notice")
+        if not self.admin_emails:
+            logger.warning("No ADMIN_NOTIFICATION_EMAIL is set - skipping support message notice")
             return {'success': False, 'error': 'ADMIN_NOTIFICATION_EMAIL not configured'}
 
-        subject = f"New support message from {username} - Mirrorwavetrades"
+        subject = f"New support message from {username} - Mirrormarkettrading"
 
         cta_html = ""
         if chat_url:
@@ -361,7 +357,7 @@ class BrevoEmailService:
             {cta_html}
         """
 
-        return self.send_email(self.admin_email, 'Admin', subject, _email_shell(f"New support message from {escape(username)}", body_html, logo_url))
+        return self.send_email(self.admin_emails, 'Admin', subject, _email_shell(f"New support message from {escape(username)}", body_html, logo_url))
 
 
 # Convenience functions for easy import
@@ -373,25 +369,25 @@ def send_password_reset_code(user_email, user_name, reset_code, logo_url=None):
         from platform_app.email_service import send_password_reset_code
         send_password_reset_code('user@example.com', 'John Doe', '123456')
     """
-    email_service = BrevoEmailService()
+    email_service = ResendEmailService()
     return email_service.send_password_reset_email(user_email, user_name, reset_code, logo_url)
 
 
 def send_welcome_email(user_email, user_name, dashboard_url=None, logo_url=None):
     """Convenience function to send the post-registration welcome email."""
-    email_service = BrevoEmailService()
+    email_service = ResendEmailService()
     return email_service.send_welcome_email(user_email, user_name, dashboard_url, logo_url)
 
 
 def send_deposit_reminder(user_email, user_name, deposit_url=None, logo_url=None):
     """Convenience function to send the deposit-reminder email."""
-    email_service = BrevoEmailService()
+    email_service = ResendEmailService()
     return email_service.send_deposit_reminder_email(user_email, user_name, deposit_url, logo_url)
 
 
 def send_admin_new_registration_email(username, email, account_id, country, registered_at, admin_url=None, logo_url=None):
     """Convenience function to notify the admin inbox of a new registration."""
-    email_service = BrevoEmailService()
+    email_service = ResendEmailService()
     return email_service.send_admin_new_registration_email(
         username, email, account_id, country, registered_at, admin_url, logo_url
     )
@@ -399,5 +395,5 @@ def send_admin_new_registration_email(username, email, account_id, country, regi
 
 def send_admin_support_message_email(username, message_preview, chat_url=None, logo_url=None):
     """Convenience function to notify the admin inbox of a new support chat message."""
-    email_service = BrevoEmailService()
+    email_service = ResendEmailService()
     return email_service.send_admin_support_message_email(username, message_preview, chat_url, logo_url)

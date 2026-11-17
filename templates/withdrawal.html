@@ -1,31 +1,31 @@
 {% extends 'base.html' %}
-{% block title %}Withdraw Funds - Mirrorwavetrades{% endblock %}
+{% block title %}Withdraw Funds - Mirrormarkettrading{% endblock %}
 {% block extra_css %}
 <style>
-.form-input { width:100%; padding:.7rem 1rem; border:1px solid var(--border); border-radius:8px; font-size:.875rem; color:var(--text-main); background:rgba(255,255,255,.04); transition:all .2s; font-family:'Poppins',sans-serif; }
-.form-input:focus { outline:none; border-color:#4b5563; background:rgba(255,255,255,.07); }
+.form-input { width:100%; padding:.7rem 1rem; border:1px solid var(--border); border-radius:8px; font-size:.875rem; color:var(--text-main); background:var(--hover); transition:all .2s; font-family:var(--font-display); }
+.form-input:focus { outline:none; border-color:var(--border-strong); background:var(--hover-2); }
 .form-input::placeholder { color:var(--text-light); }
-.amount-input { width:100%; padding:1rem 1rem 1rem 2.5rem; border:1px solid var(--border); border-radius:10px; font-size:1.5rem; font-weight:700; color:#fff; background:rgba(255,255,255,.04); transition:all .2s; font-family:'Poppins',sans-serif; }
-.amount-input:focus { outline:none; border-color:#4b5563; background:rgba(255,255,255,.07); }
+.amount-input { width:100%; padding:1rem 1rem 1rem 2.5rem; border:1px solid var(--border); border-radius:10px; font-size:1.5rem; font-weight:700; color:var(--text-main); background:var(--hover); transition:all .2s; font-family:var(--font-display); }
+.amount-input:focus { outline:none; border-color:var(--border-strong); background:var(--hover-2); }
 </style>
 {% endblock %}
 {% block content %}
 {% include 'partials/_dashboard_sidebar.html' with active_page='dashboard' %}
 <section class="py-12" style="background:var(--bg);">
     <div class="max-w-lg mx-auto px-4">
-        <div class="card p-8 md:p-10" style="box-shadow:0 4px 20px rgba(0,0,0,.35);">
+        <div class="card p-8 md:p-10" style="box-shadow:var(--shadow);">
             <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-14 h-14 rounded-xl mb-4" style="background:rgba(239,68,68,.12);">
-                    <i class="fas fa-minus-circle text-xl" style="color:#f87171;"></i>
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-xl mb-4" style="background:var(--neg-bg);">
+                    <i class="fas fa-minus-circle text-xl" style="color:var(--neg);"></i>
                 </div>
-                <h1 class="title-font text-2xl mb-1" style="color:#fff;">Withdraw Funds</h1>
+                <h1 class="title-font text-2xl mb-1" style="color:var(--text-main);">Withdraw Funds</h1>
                 <p class="text-sm" style="color:var(--text-muted);">Transfer your earnings to your wallet</p>
             </div>
 
             <!-- Available Balance -->
-            <div class="p-4 rounded-xl mb-6 text-center" style="background:rgba(34,197,94,.08); border:1px solid rgba(34,197,94,.25);">
+            <div class="p-4 rounded-xl mb-6 text-center" style="background:var(--pos-bg); border:1px solid var(--pos-line);">
                 <p class="text-xs mb-1" style="color:var(--text-muted);">Available Balance</p>
-                <p class="title-font text-3xl" style="color:#4ade80;">${{ user.account_balance|floatformat:2 }}</p>
+                <p class="title-font text-3xl" style="color:var(--pos);">${{ user.account_balance|floatformat:2 }}</p>
             </div>
 
             <form method="post" class="space-y-5">
@@ -58,14 +58,14 @@
                 <div>
                     <label class="block text-sm font-medium mb-1.5" style="color:var(--text-main);">Your Wallet Address</label>
                     <input type="text" name="wallet_address" required class="form-input font-mono text-xs" placeholder="Enter your cryptocurrency wallet address">
-                    <p class="text-xs mt-1.5" style="color:#fbbf24;"><i class="fas fa-exclamation-triangle mr-1"></i>Double-check your address. Wrong address = permanent loss!</p>
+                    <p class="text-xs mt-1.5" style="color:var(--warn);"><i class="fas fa-exclamation-triangle mr-1"></i>Double-check your address. Wrong address = permanent loss!</p>
                 </div>
 
-                <div class="p-4 rounded-xl" style="background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.25);">
-                    <h3 class="text-sm font-semibold mb-2 flex items-center gap-1.5" style="color:#fbbf24;"><i class="fas fa-clock"></i>Withdrawal Process</h3>
-                    <ul class="text-xs space-y-1" style="color:#fcd34d;">
+                <div class="p-4 rounded-xl" style="background:var(--warn-bg); border:1px solid var(--warn-line);">
+                    <h3 class="text-sm font-semibold mb-2 flex items-center gap-1.5" style="color:var(--warn);"><i class="fas fa-clock"></i>Withdrawal Process</h3>
+                    <ul class="text-xs space-y-1" style="color:var(--warn);">
                         <li>• Processing time: 24–48 hours</li>
-                        <li>• {{ platform_settings.withdrawal_fee_percentage|floatformat:"-2" }}% withdrawal fee applies</li>
+                        <li>• Withdrawals require a fee</li>
                         <li>• All withdrawals are manually reviewed for security</li>
                         <li>• You'll receive email confirmation once processed</li>
                     </ul>

@@ -23,6 +23,6 @@ if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # Admin site customization
-admin.site.site_header = "Mirrorwavetrades Admin"
-admin.site.site_title = "Mirrorwavetrades Admin Portal"
-admin.site.index_title = "Welcome to Mirrorwavetrades Administration"
+admin.site.site_header = "Mirrormarkettrading Admin"
+admin.site.site_title = "Mirrormarkettrading Admin Portal"
+admin.site.index_title = "Welcome to Mirrormarkettrading Administration"

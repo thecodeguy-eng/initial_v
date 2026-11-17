@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}404 - Page Not Found | Mirrorwavetrades{% endblock %}
+{% block title %}404 - Page Not Found | Mirrormarkettrading{% endblock %}
 {% block content %}
 <div class="min-h-screen flex items-center justify-center px-4" style="padding-top:4rem; padding-bottom:4rem;">
     <div class="text-center max-w-2xl">
@@ -18,7 +18,7 @@
             <a href="/" class="btn-primary px-8 py-3.5 rounded-lg font-semibold text-sm text-white">
                 <i class="fas fa-home mr-2"></i>Go Home
             </a>
-            <a href="javascript:history.back()" class="px-8 py-3.5 rounded-lg font-semibold text-sm text-white" style="background:rgba(255,255,255,.08); border:1px solid var(--border);">
+            <a href="javascript:history.back()" class="px-8 py-3.5 rounded-lg font-semibold text-sm text-white" style="background:var(--hover-2); border:1px solid var(--border);">
                 <i class="fas fa-arrow-left mr-2"></i>Go Back
             </a>
         </div>
@@ -31,7 +31,7 @@
 
 <style>
 .gradient-text-404 {
-    background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--text-main) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

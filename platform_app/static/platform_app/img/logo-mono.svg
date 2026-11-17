@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Mirrormarkettrading logo">
+  <rect width="64" height="64" rx="8" fill="#0a0a0a"/>
+  <polyline points="15,40 15,17 32,34 49,17 49,40" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="square" stroke-linejoin="miter"/>
+  <line x1="10" y1="46" x2="54" y2="46" stroke="#ffffff" stroke-opacity=".35" stroke-width="1.5"/>
+  <polyline points="15,52 15,57 32,52 49,57 49,52" fill="none" stroke="#ffffff" stroke-opacity=".35" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter"/>
+</svg>

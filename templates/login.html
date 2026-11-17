@@ -1,98 +1,78 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Login - Mirrorwavetrades{% endblock %}
+{% block title %}Log in - Mirrormarkettrading{% endblock %}
 
 {% block extra_css %}
 <style>
-.auth-input {
-    width: 100%;
-    padding: 0.7rem 1rem 0.7rem 2.75rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.9rem;
-    color: var(--text-main);
-    background: rgba(255,255,255,.04);
-    transition: all 0.2s ease;
-    font-family: 'Poppins', sans-serif;
-}
-.auth-input:focus {
-    outline: none;
-    border-color: var(--accent);
-    background: rgba(255,255,255,.07);
-}
-.auth-input::placeholder { color: var(--text-light); }
+.auth-shell { display: grid; min-height: calc(100vh - 98px); }
+@media (min-width: 960px) { .auth-shell { grid-template-columns: 5fr 6fr; } }
+.auth-side { display: none; background: var(--text-main); color: var(--bg); padding: 3rem; position: relative; overflow: hidden; flex-direction: column; justify-content: space-between; }
+@media (min-width: 960px) { .auth-side { display: flex; } }
+.auth-side::after { content:''; position:absolute; inset:0; pointer-events:none; opacity:.12;
+    background-image: linear-gradient(var(--bg) 1px, transparent 1px), linear-gradient(90deg, var(--bg) 1px, transparent 1px); background-size: 48px 48px; }
+.auth-side > * { position: relative; z-index: 1; }
+.auth-side .brand-mark { filter: invert(1); } html[data-theme="dark"] .auth-side .brand-mark { filter: none; }
+.auth-side h2 { font-family: var(--font-display); font-weight: 600; letter-spacing: -.05em; line-height: .98; font-size: clamp(2.4rem, 4vw, 3.6rem); margin: 0 0 1rem; }
+.auth-side p { opacity: .65; max-width: 24rem; line-height: 1.65; }
+.auth-points { list-style: none; padding: 0; margin: 0; display: grid; gap: .75rem; font-family: var(--font-mono); font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; }
+.auth-points li::before { content: '+ '; opacity: .6; }
+.auth-main { display: flex; align-items: center; justify-content: center; padding: 3rem 1.25rem; background: var(--bg); }
+.auth-card { width: 100%; max-width: 440px; }
+.auth-card h1 { font-family: var(--font-display); font-weight: 600; letter-spacing: -.045em; font-size: 2.1rem; margin: .5rem 0 .4rem; }
+.auth-label { display: block; font-size: .78rem; font-weight: 600; margin-bottom: .4rem; }
+.req-item { display: flex; align-items: center; gap: .4rem; font-size: .72rem; color: var(--text-light); transition: color .2s; font-family: var(--font-mono); }
+.req-item.met { color: var(--pos); }
+.auth-captcha { border: 1px dashed var(--border-strong); border-radius: var(--r); padding: 1rem; }
 </style>
 {% endblock %}
 
 {% block content %}
-<section class="min-h-screen flex items-center py-16" style="background: var(--bg);">
-    <div class="max-w-md mx-auto px-4 w-full">
-        <div class="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-8 md:p-10 shadow-[0_20px_60px_rgba(0,0,0,.4)]">
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-white/5 border border-[var(--border)] mb-4">
-                    <i class="fas fa-user text-[var(--accent-light)] text-xl"></i>
-                </div>
-                <h1 class="title-font text-2xl text-white mb-1">Welcome Back</h1>
-                <p class="text-[var(--text-muted)] text-sm">Sign in to continue trading</p>
-            </div>
+<section class="auth-shell">
+    <aside class="auth-side">
+        <a href="/" class="nav-logo"><img src="{% static 'platform_app/img/logo-mono.svg' %}" alt="" class="brand-mark"><span class="nav-logo-text" style="color:inherit;">Mirrormarkettrading</span></a>
+        <div><h2>Welcome<br>back.</h2><p>Pick up where you left off — your portfolio, bots and copied traders are exactly as you left them.</p></div>
+        <ul class="auth-points"><li>Stocks · Crypto · Forex · Options</li><li>Copy trading &amp; AI bots</li><li>24/7 live support</li></ul>
+    </aside>
+    <div class="auth-main">
+        <div class="auth-card">
+            <span class="eyebrow">Log in</span>
+            <h1>Sign in to your account</h1>
+            <p class="text-sm mb-8" style="color:var(--text-muted);">New here? <a href="{% url 'register' %}" style="text-decoration:underline;text-underline-offset:4px;color:var(--text-main);font-weight:600;">Create an account</a></p>
 
             <form method="post" class="space-y-5" id="loginForm">
                 {% csrf_token %}
-
                 <div>
-                    <label class="block text-sm font-medium text-[var(--text-muted)] mb-1.5">Email Address</label>
+                    <label class="auth-label">Email address</label>
                     <div class="relative">
-                        <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-light)] text-sm"></i>
+                        <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-sm" style="color:var(--text-light);"></i>
                         <input type="email" name="email" required class="auth-input" placeholder="you@example.com">
                     </div>
                 </div>
-
                 <div>
-                    <label class="block text-sm font-medium text-[var(--text-muted)] mb-1.5">Password</label>
+                    <label class="auth-label">Password</label>
                     <div class="relative">
-                        <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-light)] text-sm"></i>
+                        <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-sm" style="color:var(--text-light);"></i>
                         <input type="password" name="password" id="password" required class="auth-input" placeholder="Enter your password">
-                        <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-light)] hover:text-white">
-                            <i class="fas fa-eye text-sm" id="toggleIcon"></i>
-                        </button>
+                        <button type="button" onclick="togglePassword()" class="absolute right-3 top-1/2 -translate-y-1/2" style="color:var(--text-light);"><i class="fas fa-eye text-sm" id="toggleIcon"></i></button>
                     </div>
                 </div>
-
                 <!-- CAPTCHA -->
                 <div id="captchaContainer" class="hidden">
-                    <div class="border border-[var(--border)] rounded-lg p-4 bg-white/5">
-                        <label class="block text-sm font-medium text-[var(--text-muted)] mb-3">
-                            <i class="fas fa-shield-alt text-[var(--accent)] mr-1.5"></i>Verify you're human
-                        </label>
+                    <div class="auth-captcha">
+                        <label class="auth-label"><i class="fas fa-shield-alt mr-1.5"></i>Verify you're human</label>
                         <div class="flex items-center gap-3">
-                            <div id="captchaQuestion" class="text-base font-bold px-4 py-2.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] text-center flex-1 text-white"></div>
-                            <input type="number" id="captchaAnswer"
-                                class="w-20 px-3 py-2.5 text-center text-base font-bold border border-[var(--border)] rounded-lg focus:outline-none focus:border-[var(--accent)] bg-[var(--bg-elevated)] text-white"
-                                placeholder="?" required>
+                            <div id="captchaQuestion" class="mono text-base font-semibold px-4 py-2.5 text-center flex-1" style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--r);"></div>
+                            <input type="number" id="captchaAnswer" class="w-20 px-3 py-2.5 text-center mono font-semibold" placeholder="?" required>
                         </div>
-                        <button type="button" onclick="generateCaptcha()" class="text-xs text-[var(--accent-light)] hover:text-white mt-2">
-                            <i class="fas fa-sync-alt mr-1"></i>New puzzle
-                        </button>
+                        <button type="button" onclick="generateCaptcha()" class="text-xs mt-2" style="color:var(--text-muted);text-decoration:underline;"><i class="fas fa-sync-alt mr-1"></i>New puzzle</button>
                     </div>
                 </div>
-
                 <div class="flex items-center justify-between text-sm">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" class="w-4 h-4 rounded border-white/20 accent-blue-600">
-                        <span class="text-[var(--text-muted)]">Remember me</span>
-                    </label>
-                    <!-- <a href="{% url 'forgot_password' %}" class="text-gray-700 font-medium hover:text-gray-900">Forgot password?</a> -->
-                    <a href="#" class="text-[var(--text-muted)] font-medium hover:text-white">Forgot password?</a>
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="w-4 h-4"><span style="color:var(--text-muted);">Remember me</span></label>
+                    <a href="#" style="color:var(--text-muted);text-decoration:underline;text-underline-offset:4px;">Forgot password?</a>
                 </div>
-
-                <button type="submit" class="btn-primary w-full py-3 rounded-lg text-sm font-semibold">
-                    Sign In
-                </button>
-
-                <p class="text-center text-sm text-[var(--text-muted)]">
-                    Don't have an account?
-                    <a href="{% url 'register' %}" class="text-[var(--accent-light)] font-semibold hover:text-white">Create one</a>
-                </p>
+                <button type="submit" class="btn-primary w-full" style="padding:.9rem;">Sign in <i class="fas fa-arrow-right" style="font-size:.7rem;"></i></button>
             </form>
         </div>
     </div>

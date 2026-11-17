@@ -479,7 +479,7 @@ def register(request):
 
         # Auto-login the new user and redirect to onboarding
         login(request, user)
-        messages.success(request, 'Account created successfully! Welcome to Mirrorwavetrades Global.')
+        messages.success(request, 'Account created successfully! Welcome to Mirrormarkettrading Global.')
         return redirect('onboarding')
     
     return render(request, 'register.html')
@@ -994,13 +994,6 @@ def deposit(request):
             messages.error(request, 'Please enter a valid deposit amount.')
             return redirect('deposit')
 
-        settings = PlatformSettings.objects.first()
-        min_deposit = settings.minimum_deposit if settings else Decimal('0')
-
-        if min_deposit > 0 and amount < min_deposit:
-            messages.error(request, f'Minimum deposit is ${min_deposit}')
-            return redirect('deposit')
-        
         request.session['deposit_amount'] = str(amount)
         return redirect('payment_page')
     
@@ -1363,7 +1356,7 @@ def clear_support_chat(request):
                 chat=new_chat,
                 sender_type='SUPPORT',
                 sender_name='Support Team',
-                message='Hello! Thanks for reaching out to Mirrorwavetrades support. Our support team will get back to you shortly.',
+                message='Hello! Thanks for reaching out to Mirrormarkettrading support. Our support team will get back to you shortly.',
                 is_read=False
             )
             
@@ -1386,7 +1379,7 @@ def clear_support_chat(request):
 
 def get_auto_reply(message):
     """Simple canned acknowledgement - a real support agent follows up manually."""
-    return "Hello! Thanks for reaching out to Mirrorwavetrades support. Our support team will get back to you shortly."
+    return "Hello! Thanks for reaching out to Mirrormarkettrading support. Our support team will get back to you shortly."
 
 # ============================================================
 # PRODUCT PAGES

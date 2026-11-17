@@ -1,320 +1,196 @@
-<!DOCTYPE html>
-<html lang="en">
+{% load static %}<!DOCTYPE html>
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Admin Dashboard{% endblock %} - Mirrorwavetrades</title>
-    
+    <title>{% block title %}Admin Dashboard{% endblock %} - Mirrormarkettrading</title>
+    <meta name="robots" content="noindex,nofollow">
+    <link rel="icon" type="image/svg+xml" href="{% static 'platform_app/img/favicon.svg' %}">
+    <script>
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem("theme"); } catch (e) {}
+            if (t !== "light" && t !== "dark") t = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            document.documentElement.setAttribute("data-theme", t);
+        })();
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'platform_app/css/ui.css' %}">
+
     <style>
-        * { font-family: 'Inter', sans-serif; }
-        body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; }
-        
-        .admin-sidebar {
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(59, 130, 246, 0.2);
-            transition: transform 0.3s ease;
-        }
-        
-        .admin-card {
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            transition: all 0.3s ease;
-        }
-        
-        .admin-card:hover {
-            border-color: rgba(59, 130, 246, 0.5);
-        }
-        
-        .stat-card {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-        
-        .gradient-text {
-            background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .nav-link {
-            transition: all 0.3s ease;
-        }
-        
-        .nav-link:hover, .nav-link.active {
-            background: rgba(59, 130, 246, 0.1);
-            border-left: 3px solid #3b82f6;
-        }
-        
-        .pulse-dot {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: .5; }
-        }
-        
-        /* Mobile Sidebar Styles */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 40;
-        }
-        
-        .sidebar-overlay.show {
-            display: block;
-        }
-        
-        @media (max-width: 768px) {
-            .admin-sidebar {
-                position: fixed;
-                left: 0;
-                top: 0;
-                height: 100vh;
-                z-index: 50;
-                transform: translateX(-100%);
-            }
-            
-            .admin-sidebar.open {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0 !important;
-                padding-top: 72px !important;
-            }
-            
-            .mobile-header {
-                display: flex !important;
-            }
-        }
-        
-        @media (min-width: 769px) {
-            .mobile-header {
-                display: none !important;
-            }
-            
-            .main-content {
-                margin-left: 16rem;
-            }
-        }
-        
+        body { background: var(--bg-elevated); color: var(--text-main); min-height: 100vh; }
+
+        /* shell */
+        .ad-shell { display: grid; grid-template-columns: 1fr; min-height: 100vh; }
+        @media (min-width: 1024px) { .ad-shell { grid-template-columns: 252px 1fr; } }
+
+        .ad-side { background: var(--bg); border-right: 1px solid var(--border); display: flex; flex-direction: column;
+            position: fixed; inset: 0 auto 0 0; width: 272px; z-index: 60; transform: translateX(-100%); transition: transform .28s ease; overflow-y: auto; }
+        .ad-side.open { transform: none; box-shadow: var(--shadow); }
+        @media (min-width: 1024px) { .ad-side { position: sticky; top: 0; height: 100vh; width: auto; transform: none; z-index: 10; } }
+        .ad-overlay { display: none; position: fixed; inset: 0; background: var(--overlay); z-index: 55; }
+        .ad-overlay.show { display: block; }
+
+        .ad-brand { display: flex; align-items: center; gap: .65rem; padding: 1.1rem 1.1rem 1rem; text-decoration: none; }
+        .ad-brand img { width: 28px; height: 28px; }
+        html[data-theme="dark"] .ad-brand img { filter: invert(1); }
+        .ad-brand b { font-family: var(--font-display); font-size: 1rem; letter-spacing: -.03em; display: block; line-height: 1.1; }
+        .ad-brand small { font-family: var(--font-mono); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-light); }
+
+        .ad-group { padding: 0 .6rem; }
+        .ad-group-label { font-family: var(--font-mono); font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; color: var(--text-light); padding: 1.15rem .65rem .4rem; }
+        .nav-link.ad-link { display: flex; align-items: center; gap: .7rem; padding: .5rem .65rem; margin: 1px 0; border-radius: var(--r); width: 100%;
+            font-size: .84rem; font-weight: 500; color: var(--text-muted); border-left: 0; }
+        .nav-link.ad-link i { width: 16px; text-align: center; font-size: .78rem; color: var(--text-light); }
+        .nav-link.ad-link:hover { background: var(--hover-2); color: var(--text-main); }
+        .nav-link.ad-link.active { background: var(--text-main); color: var(--bg); font-weight: 600; }
+        .nav-link.ad-link.active i { color: var(--bg); }
+        .nav-link.ad-link.danger:hover { color: var(--neg); }
+
+        .ad-me { margin-top: auto; padding: .9rem 1.1rem; border-top: 1px solid var(--border); display: flex; align-items: center; gap: .7rem; }
+        .ad-av { width: 32px; height: 32px; border-radius: 50%; background: var(--text-main); color: var(--bg); display: grid; place-items: center; font-weight: 600; font-size: .75rem; font-family: var(--font-display); flex-shrink: 0; }
+        .ad-me p { margin: 0; font-size: .8rem; font-weight: 600; line-height: 1.2; } .ad-me span { font-size: .68rem; color: var(--text-light); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .06em; }
+
+        /* top bar */
+        .ad-main { min-width: 0; display: flex; flex-direction: column; }
+        .ad-top { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: .75rem; padding: 0 1rem; height: 58px;
+            background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
+        @media (min-width: 768px) { .ad-top { padding: 0 2rem; } }
+        .ad-crumb { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); display: flex; align-items: center; gap: .5rem; }
+        .ad-crumb b { color: var(--text-main); font-weight: 500; }
+        .ad-menu-btn { display: inline-grid; } @media (min-width: 1024px) { .ad-menu-btn { display: none; } }
+        .ad-body { padding: 1.25rem 1rem 3rem; } @media (min-width: 768px) { .ad-body { padding: 2rem 2rem 4rem; } }
+        .ad-body > * { max-width: 1400px; }
+
+        /* legacy admin classes, re-skinned */
+        .admin-card, .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); backdrop-filter: none; transition: border-color .15s; }
+        .admin-card:hover, .stat-card:hover { border-color: var(--border-strong); }
+        .stat-card h3 { font-family: var(--font-mono); letter-spacing: -.05em; font-weight: 500; }
+        .gradient-text { background: none !important; -webkit-text-fill-color: currentColor !important; color: var(--text-main); font-family: var(--font-display); letter-spacing: -.04em; }
+        h2.gradient-text { font-size: 2rem; line-height: 1.1; }
+        .pulse-dot { animation: blink 1.6s steps(2,end) infinite; }
+
+        /* tables */
+        .ad-body table { width: 100%; }
+        .ad-body thead { background: var(--bg-elevated) !important; }
+        .ad-body thead th { color: var(--text-muted) !important; }
+        .ad-body tbody tr { border-color: var(--border) !important; }
+        .ad-body tbody tr:hover { background: var(--hover); }
+        .ad-body td, .ad-body th { vertical-align: middle; }
+        .ad-body .overflow-x-auto, .ad-body .overflow-hidden { scrollbar-width: thin; }
+        .ad-body a.text-blue-400:hover, .ad-body a.text-blue-600:hover { text-decoration: underline; }
+        .ad-body label { color: var(--text-muted); }
+        .ad-body input[type=file] { color: var(--text-muted); }
+
+        /* flash messages */
+        .ad-flash { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .8rem 1rem; border: 1px solid var(--border-strong);
+            border-left-width: 3px; border-radius: var(--r); background: var(--bg-card); font-size: .88rem; }
+        .ad-flash.success { border-left-color: var(--pos); } .ad-flash.error { border-left-color: var(--neg); } .ad-flash.warning { border-left-color: var(--warn); } .ad-flash.info { border-left-color: var(--text-main); }
+
         {% block extra_css %}{% endblock %}
     </style>
 </head>
-<body class="text-gray-100">
-    
-    <!-- Mobile Header -->
-    <div class="mobile-header hidden fixed top-0 left-0 right-0 bg-slate-900 border-b border-slate-700 p-4 z-30">
-        <div class="flex items-center justify-between">
-            <button id="menuToggle" class="text-white text-2xl">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="flex items-center space-x-2">
-                <i class="fas fa-shield-alt text-xl gradient-text"></i>
-                <span class="text-lg font-bold gradient-text">Admin Panel</span>
+<body>
+    <div id="sidebarOverlay" class="ad-overlay"></div>
+
+    <div class="ad-shell">
+        <aside id="adminSidebar" class="ad-side">
+            <a href="{% url 'admin_dashboard' %}" class="ad-brand">
+                <img src="{% static 'platform_app/img/logo-mono.svg' %}" alt="">
+                <span><b>Console</b><small>Mirrormarkettrading</small></span>
+            </a>
+
+            <nav class="ad-group" aria-label="Admin">
+                <div class="ad-group-label">Overview</div>
+                <a href="{% url 'admin_dashboard' %}" class="nav-link ad-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"><i class="fas fa-chart-line"></i>Dashboard</a>
+                <a href="{% url 'admin_users_list' %}" class="nav-link ad-link {% if 'users' in request.path %}active{% endif %}"><i class="fas fa-users"></i>Users</a>
+                <a href="{% url 'admin_activities_list' %}" class="nav-link ad-link {% if 'activities' in request.path %}active{% endif %}"><i class="fas fa-history"></i>User activity</a>
+
+                <div class="ad-group-label">Money</div>
+                <a href="{% url 'admin_transactions_list' %}" class="nav-link ad-link {% if 'transactions' in request.path %}active{% endif %}"><i class="fas fa-exchange-alt"></i>Transactions</a>
+                <a href="{% url 'admin_live_trades_list' %}" class="nav-link ad-link {% if 'live-trades' in request.path %}active{% endif %}"><i class="fas fa-random"></i>Live trades</a>
+                <a href="{% url 'admin_trade_history_list' %}" class="nav-link ad-link {% if 'trade-history' in request.path %}active{% endif %}"><i class="fas fa-receipt"></i>Trade history</a>
+
+                <div class="ad-group-label">Products</div>
+                <a href="{% url 'admin_traders_list' %}" class="nav-link ad-link {% if 'traders' in request.path %}active{% endif %}"><i class="fas fa-user-tie"></i>Copy traders</a>
+                <a href="{% url 'admin_bot_plans_list' %}" class="nav-link ad-link {% if 'bot-plans' in request.path %}active{% endif %}"><i class="fas fa-robot"></i>Bot plans</a>
+                <a href="{% url 'admin_investment_plans_list' %}" class="nav-link ad-link {% if 'investment-plans' in request.path %}active{% endif %}"><i class="fas fa-chart-pie"></i>Investment plans</a>
+
+                <div class="ad-group-label">Support &amp; system</div>
+                <a href="{% url 'admin_support_chats' %}" class="nav-link ad-link {% if 'support' in request.path %}active{% endif %}"><i class="fas fa-comments"></i>Support chats</a>
+                <a href="{% url 'admin_admins_list' %}" class="nav-link ad-link {% if 'admins' in request.path %}active{% endif %}"><i class="fas fa-user-shield"></i>Admins</a>
+                <a href="{% url 'admin_settings' %}" class="nav-link ad-link {% if 'settings' in request.path %}active{% endif %}"><i class="fas fa-cog"></i>Settings</a>
+                <a href="{% url 'admin_system_logs' %}" class="nav-link ad-link {% if 'logs' in request.path %}active{% endif %}"><i class="fas fa-file-alt"></i>System logs</a>
+
+                <div class="ad-group-label">Account</div>
+                <a href="{% url 'home' %}" class="nav-link ad-link"><i class="fas fa-arrow-up-right-from-square"></i>View site</a>
+                <a href="{% url 'logout' %}" class="nav-link ad-link danger"><i class="fas fa-sign-out-alt"></i>Log out</a>
+            </nav>
+
+            <div class="ad-me">
+                <div class="ad-av">{{ request.user.username|slice:":2"|upper }}</div>
+                <div><p>{{ request.user.username }}</p><span>{% if request.user.is_superuser %}Super admin{% else %}Staff{% endif %}</span></div>
             </div>
-            <div class="w-8"></div>
-        </div>
-    </div>
-    
-    <!-- Sidebar Overlay -->
-    <div id="sidebarOverlay" class="sidebar-overlay"></div>
-    
-    <div class="flex min-h-screen">
-        <!-- Sidebar -->
-        <div id="adminSidebar" class="admin-sidebar w-64 fixed h-full overflow-y-auto">
-            <div class="p-6">
-                <!-- Close button for mobile -->
-                <button id="closeSidebar" class="md:hidden absolute top-4 right-4 text-white text-2xl z-10">
-                    <i class="fas fa-times"></i>
-                </button>
-                
-                <div class="flex items-center space-x-2 mb-8">
-                    <i class="fas fa-shield-alt text-3xl gradient-text"></i>
-                    <div>
-                        <h1 class="text-xl font-bold gradient-text">Admin Panel</h1>
-                        <p class="text-xs text-gray-400">Mirrorwavetrades</p>
-                    </div>
+        </aside>
+
+        <div class="ad-main">
+            <header class="ad-top">
+                <button id="menuToggle" class="icon-btn ad-menu-btn" aria-label="Open menu"><i class="fas fa-bars"></i></button>
+                <div class="ad-crumb"><span>Console</span><span style="opacity:.4;">/</span><b>{% block crumb %}Admin{% endblock %}</b></div>
+                <div style="margin-left:auto;display:flex;gap:.5rem;align-items:center;">
+                    <a href="{% url 'home' %}" class="btn-ghost" style="padding:.4rem .75rem;font-size:.78rem;">View site <i class="fas fa-arrow-up-right-from-square" style="font-size:.65rem;"></i></a>
+                    <button class="icon-btn theme-toggle" type="button" onclick="toggleTheme()" aria-label="Toggle light / dark mode">
+                        <i class="fas fa-moon ico-moon"></i><i class="fas fa-sun ico-sun"></i>
+                    </button>
                 </div>
-                
-                <!-- Admin Info -->
-                <div class="bg-slate-800/50 rounded-lg p-4 mb-6">
-                    <p class="text-gray-400 text-xs mb-1">Logged in as</p>
-                    <p class="text-white font-semibold">{{ request.user.username }}</p>
-                    <span class="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full inline-block mt-2">
-                        {% if request.user.is_superuser %}Super Admin{% else %}Staff{% endif %}
-                    </span>
-                </div>
-                
-                <nav class="space-y-1">
-                    <a href="{% url 'admin_dashboard' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
-                        <i class="fas fa-chart-line w-5"></i>
-                        <span>Dashboard</span>
-                    </a>
-                    
-                    <a href="{% url 'admin_users_list' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 {% if 'users' in request.path %}active{% endif %}">
-                        <i class="fas fa-users w-5"></i>
-                        <span>Users</span>
-                    </a>
-                    
-                    <a href="{% url 'admin_transactions_list' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 {% if 'transactions' in request.path %}active{% endif %}">
-                        <i class="fas fa-exchange-alt w-5"></i>
-                        <span>Transactions</span>
-                    </a>
-                    
-                    <a href="{% url 'admin_live_trades_list' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 {% if 'live-trades' in request.path %}active{% endif %}">
-                        <i class="fas fa-random w-5"></i>
-                        <span>Live Trades</span>
-                    </a>
+            </header>
 
-                    <a href="{% url 'admin_trade_history_list' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 {% if 'trade-history' in request.path %}active{% endif %}">
-                        <i class="fas fa-chart-line w-5"></i>
-                        <span>Trade History</span>
-                    </a>
-
-                    <a href="{% url 'admin_traders_list' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 {% if 'traders' in request.path %}active{% endif %}">
-                        <i class="fas fa-user-tie w-5"></i>
-                        <span>Copy Traders</span>
-                    </a>
-                    
-                    <a href="{% url 'admin_bot_plans_list' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 {% if 'bot-plans' in request.path %}active{% endif %}">
-                        <i class="fas fa-robot w-5"></i>
-                        <span>Bot Plans</span>
-                    </a>
-
-                    <a href="{% url 'admin_investment_plans_list' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 {% if 'investment-plans' in request.path %}active{% endif %}">
-                        <i class="fas fa-chart-pie w-5"></i>
-                        <span>Investment Plans</span>
-                    </a>
-
-                    <a href="{% url 'admin_support_chats' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 {% if 'support' in request.path %}active{% endif %}">
-                        <i class="fas fa-comments w-5"></i>
-                        <span>Support Chats</span>
-                    </a>
-
-                    <a href="{% url 'admin_activities_list' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 {% if 'activities' in request.path %}active{% endif %}">
-                        <i class="fas fa-history w-5"></i>
-                        <span>User Activities</span>
-                    </a>
-
-                    <a href="{% url 'admin_admins_list' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 {% if 'admins' in request.path %}active{% endif %}">
-                        <i class="fas fa-user-shield w-5"></i>
-                        <span>Admins</span>
-                    </a>
-
-                    <a href="{% url 'admin_settings' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 {% if 'settings' in request.path %}active{% endif %}">
-                        <i class="fas fa-cog w-5"></i>
-                        <span>Settings</span>
-                    </a>
-
-                    <a href="{% url 'admin_system_logs' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 {% if 'logs' in request.path %}active{% endif %}">
-                        <i class="fas fa-file-alt w-5"></i>
-                        <span>System Logs</span>
-                    </a>
-
-                    <div class="border-t border-gray-700 my-4"></div>
-                    
-                    <a href="{% url 'home' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300">
-                        <i class="fas fa-home w-5"></i>
-                        <span>Go to Site</span>
-                    </a>
-                    
-                    <a href="{% url 'logout' %}" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-red-400">
-                        <i class="fas fa-sign-out-alt w-5"></i>
-                        <span>Logout</span>
-                    </a>
-                </nav>
-            </div>
-        </div>
-        
-        <!-- Main Content -->
-        <div class="main-content flex-1 p-4 md:p-8">
-            <!-- Messages -->
-            {% if messages %}
-            <div class="mb-6 space-y-3">
-                {% for message in messages %}
-                <div class="p-4 rounded-xl {% if message.tags == 'success' %}bg-green-500/20 border border-green-500/50 text-green-300{% elif message.tags == 'error' %}bg-red-500/20 border border-red-500/50 text-red-300{% elif message.tags == 'warning' %}bg-yellow-500/20 border border-yellow-500/50 text-yellow-300{% else %}bg-blue-500/20 border border-blue-500/50 text-blue-300{% endif %}">
-                    <div class="flex items-center justify-between">
+            <main class="ad-body">
+                {% if messages %}
+                <div class="mb-6 space-y-3" id="adFlash">
+                    {% for message in messages %}
+                    <div class="ad-flash {{ message.tags }}">
                         <span><i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} mr-2"></i>{{ message }}</span>
-                        <button onclick="this.parentElement.parentElement.remove()" class="text-xl hover:opacity-70">&times;</button>
+                        <button onclick="this.parentElement.remove()" class="text-xl hover:opacity-70" aria-label="Dismiss">&times;</button>
                     </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-            
-            {% block admin_content %}{% endblock %}
+                {% endif %}
+
+                {% block admin_content %}{% endblock %}
+            </main>
         </div>
     </div>
-    
+
     {% block extra_js %}{% endblock %}
-    
+
     <script>
-        // Mobile menu toggle
-        const menuToggle = document.getElementById('menuToggle');
-        const closeSidebar = document.getElementById('closeSidebar');
-        const adminSidebar = document.getElementById('adminSidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-        
-        function openSidebar() {
-            adminSidebar.classList.add('open');
-            sidebarOverlay.classList.add('show');
-            document.body.style.overflow = 'hidden';
+        function toggleTheme() {
+            var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            try { localStorage.setItem('theme', next); } catch (e) {}
+            window.dispatchEvent(new CustomEvent('themechange', { detail: next }));
         }
-        
-        function closeSidebarFunc() {
-            adminSidebar.classList.remove('open');
-            sidebarOverlay.classList.remove('show');
-            document.body.style.overflow = '';
-        }
-        
-        if (menuToggle) {
-            menuToggle.addEventListener('click', openSidebar);
-        }
-        
-        if (closeSidebar) {
-            closeSidebar.addEventListener('click', closeSidebarFunc);
-        }
-        
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener('click', closeSidebarFunc);
-        }
-        
-        // Close sidebar when clicking a link on mobile
-        const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                if (window.innerWidth < 769) {
-                    closeSidebarFunc();
-                }
-            });
-        });
-        
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            if (window.innerWidth >= 769) {
-                closeSidebarFunc();
-            }
-        });
-        
-        // Auto-hide messages after 5 seconds
+
+        const sidebar = document.getElementById('adminSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        function openSidebar()  { sidebar.classList.add('open');    overlay.classList.add('show');    document.body.style.overflow = 'hidden'; }
+        function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('show'); document.body.style.overflow = ''; }
+        document.getElementById('menuToggle')?.addEventListener('click', openSidebar);
+        overlay.addEventListener('click', closeSidebar);
+        sidebar.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { if (window.innerWidth < 1024) closeSidebar(); }));
+        window.addEventListener('resize', () => { if (window.innerWidth >= 1024) closeSidebar(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
+
         setTimeout(() => {
-            document.querySelectorAll('[class*="bg-green-500"], [class*="bg-red-500"], [class*="bg-yellow-500"], [class*="bg-blue-500"]').forEach(msg => {
-                if (msg.closest('.mb-6')) {
-                    msg.style.transition = 'all 0.5s';
-                    msg.style.opacity = '0';
-                    msg.style.transform = 'translateX(100%)';
-                    setTimeout(() => msg.remove(), 500);
-                }
+            document.querySelectorAll('#adFlash .ad-flash').forEach(el => {
+                el.style.transition = 'all .4s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 400);
             });
         }, 5000);
     </script>

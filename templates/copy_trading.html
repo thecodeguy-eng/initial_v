@@ -1,22 +1,22 @@
 {% extends 'base.html' %}
-{% block title %}Copy Trading - Mirrorwavetrades{% endblock %}
+{% block title %}Copy Trading - Mirrormarkettrading{% endblock %}
 {% block extra_css %}
 <style>
 .trader-card { background:var(--bg-card); border:1.5px solid var(--border); border-radius:14px; overflow:hidden; transition:box-shadow .2s, border-color .2s; }
-.trader-card:hover { box-shadow:0 8px 28px rgba(0,0,0,.4); border-color:rgba(56,189,248,.3); }
+.trader-card:hover { box-shadow:var(--shadow); border-color:var(--border-strong); }
 .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:50; display:flex; align-items:center; justify-content:center; padding:1rem; }
-.modal-box { background:var(--bg-elevated); border:1px solid var(--border); border-radius:16px; width:100%; max-width:440px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.6); }
-.form-input { width:100%; padding:.65rem 1rem 0.65rem 1.75rem; border:1px solid var(--border); border-radius:8px; font-size:.9rem; color:var(--text-main); background:rgba(255,255,255,.04); transition:all .2s; font-family:'Poppins',sans-serif; }
-.form-input:focus { outline:none; border-color:#4b5563; background:rgba(255,255,255,.07); }
+.modal-box { background:var(--bg-elevated); border:1px solid var(--border); border-radius:16px; width:100%; max-width:440px; overflow:hidden; box-shadow:var(--shadow); }
+.form-input { width:100%; padding:.65rem 1rem 0.65rem 1.75rem; border:1px solid var(--border); border-radius:8px; font-size:.9rem; color:var(--text-main); background:var(--hover); transition:all .2s; font-family:var(--font-display); }
+.form-input:focus { outline:none; border-color:var(--border-strong); background:var(--hover-2); }
 
 .trader-search-wrap { position:relative; max-width:420px; margin:0 auto 2rem auto; }
 .trader-search-wrap i.fa-search { position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--text-light); font-size:.85rem; }
 .trader-search-input {
     width:100%; padding:.8rem 1rem .8rem 2.6rem; border-radius:12px;
     border:1.5px solid var(--border); background:var(--bg-card); color:var(--text-main);
-    font-size:.9rem; font-family:'Poppins',sans-serif; transition:border-color .2s, background .2s;
+    font-size:.9rem; font-family:var(--font-display); transition:border-color .2s, background .2s;
 }
-.trader-search-input:focus { outline:none; border-color:#38bdf8; background:rgba(56,189,248,.05); }
+.trader-search-input:focus { outline:none; border-color:var(--border-strong); background:var(--tint); }
 .trader-search-input::placeholder { color:var(--text-light); }
 .trader-search-clear {
     position:absolute; right:.85rem; top:50%; transform:translateY(-50%);
@@ -25,16 +25,6 @@
 .trader-search-clear:hover { color:var(--text-main); }
 #no-trader-results { display:none; }
 
-/* ── Dark-theme utility overrides ─────────────────────── */
-.text-gray-900 { color: #fff !important; }
-.text-gray-700 { color: #c7ccd6 !important; }
-.text-gray-500 { color: var(--text-muted) !important; }
-.text-gray-400 { color: var(--text-light) !important; }
-.bg-white { background: var(--bg-card) !important; }
-.bg-gray-50 { background: rgba(255,255,255,.04) !important; }
-.border-gray-200 { border-color: var(--border) !important; }
-.bg-amber-50 { background: rgba(245,158,11,.12) !important; }
-.border-amber-100 { border-color: rgba(245,158,11,.25) !important; }
 </style>
 {% endblock %}
 {% block content %}
@@ -48,15 +38,15 @@
         </div>
 
         {% if active_copy_trades %}
-        <div class="card p-5 mb-8" style="border:1.5px solid rgba(20,184,166,.3); background:rgba(20,184,166,.06);">
+        <div class="card p-5 mb-8" style="border:1.5px solid var(--pos-line); background:var(--pos-bg);">
             <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
                 <div class="flex items-center gap-2.5">
-                    <i class="fas fa-user-tie" style="color:#2dd4bf;"></i>
+                    <i class="fas fa-user-tie" style="color:var(--text-main);"></i>
                     <h3 class="font-semibold text-gray-900">Your Money in Copy Trading</h3>
                 </div>
                 <div class="text-right">
                     <p class="text-xs text-gray-400">Total invested, still yours</p>
-                    <p class="title-font text-xl" style="color:#2dd4bf;">${{ copy_trading_balance|floatformat:2 }}</p>
+                    <p class="title-font text-xl" style="color:var(--text-main);">${{ copy_trading_balance|floatformat:2 }}</p>
                 </div>
             </div>
             <p class="text-xs text-gray-500 mb-4">This money was moved out of your account balance into these copy trades - it has not vanished, it's working with the traders below.</p>
@@ -67,7 +57,7 @@
                         <a href="{% url 'copy_trader_detail' sub.trader.id %}" class="font-medium text-sm hover:underline" style="color:var(--text-main);">{{ sub.trader.name }}</a>
                         <p class="text-xs text-gray-400">{% if sub.plan %}{{ sub.plan.display_name }} plan{% else %}Standard{% endif %} &middot; since {{ sub.start_date|date:"M d, Y" }}</p>
                     </div>
-                    <p class="font-semibold text-sm" style="color:#fff;">${{ sub.amount_invested|floatformat:2 }}</p>
+                    <p class="font-semibold text-sm" style="color:var(--text-main);">${{ sub.amount_invested|floatformat:2 }}</p>
                 </div>
                 {% endfor %}
             </div>
@@ -88,7 +78,7 @@
             {% for trader in traders %}
             <div class="trader-card" data-name="{{ trader.name|lower }}" data-country="{{ trader.country|lower }}">
                 <!-- Trader Image -->
-                <div class="relative" style="padding-bottom:56%; background:linear-gradient(135deg,#1e3a5f,#1d4ed8);">
+                <div class="relative" style="padding-bottom:56%; background:linear-gradient(135deg,var(--bg-elevated),var(--primary));">
                     {% if trader.profile_image %}
                     <img src="{{ trader.profile_image.url }}" alt="{{ trader.name }}" class="absolute inset-0 w-full h-full object-cover">
                     {% else %}

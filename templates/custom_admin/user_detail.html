@@ -352,7 +352,7 @@
 
 <!-- Danger Zone -->
 {% if user_obj.id != request.user.id %}
-<div class="admin-card p-6 rounded-xl mt-6" style="border-color: rgba(239,68,68,0.35);">
+<div class="admin-card p-6 rounded-xl mt-6" style="border-color: var(--neg-line);">
     <h4 class="text-lg font-bold text-red-400 mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>Danger Zone</h4>
     <p class="text-gray-400 text-sm mb-4">Permanently delete this user account and all associated data (transactions, trades, portfolio, chats). This cannot be undone.</p>
     <form method="POST" onsubmit="return confirm('Permanently delete {{ user_obj.username }}? This cannot be undone.')">

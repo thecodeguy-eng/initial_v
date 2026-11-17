@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}403 - Access Forbidden | Mirrorwavetrades{% endblock %}
+{% block title %}403 - Access Forbidden | Mirrormarkettrading{% endblock %}
 {% block content %}
 <div class="min-h-screen flex items-center justify-center px-4" style="padding-top:4rem; padding-bottom:4rem;">
     <div class="text-center max-w-2xl">
@@ -18,13 +18,13 @@
             <a href="/" class="btn-primary px-8 py-3.5 rounded-lg font-semibold text-sm text-white">
                 <i class="fas fa-home mr-2"></i>Go Home
             </a>
-            <a href="javascript:history.back()" class="px-8 py-3.5 rounded-lg font-semibold text-sm text-white" style="background:rgba(255,255,255,.08); border:1px solid var(--border);">
+            <a href="javascript:history.back()" class="px-8 py-3.5 rounded-lg font-semibold text-sm text-white" style="background:var(--hover-2); border:1px solid var(--border);">
                 <i class="fas fa-arrow-left mr-2"></i>Go Back
             </a>
         </div>
 
-        <div class="mt-10 p-4 rounded-lg" style="background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.25);">
-            <p class="text-sm" style="color:#f87171;">
+        <div class="mt-10 p-4 rounded-lg" style="background:var(--neg-bg); border:1px solid var(--neg-line);">
+            <p class="text-sm" style="color:var(--neg);">
                 <i class="fas fa-exclamation-triangle mr-2"></i>
                 If you believe this is an error, please contact support.
             </p>
@@ -38,7 +38,7 @@
 
 <style>
 .gradient-text-403 {
-    background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+    background: linear-gradient(135deg, var(--neg) 0%, var(--warn) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

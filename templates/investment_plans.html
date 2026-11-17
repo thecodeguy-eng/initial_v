@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Investment Plans – Mirrorwavetrades{% endblock %}
+{% block title %}Investment Plans – Mirrormarkettrading{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -20,13 +20,13 @@
     box-sizing: border-box;
 }
 .plan-card:hover {
-    box-shadow: 0 8px 28px rgba(0,0,0,.4);
-    border-color: rgba(56,189,248,.35);
+    box-shadow:var(--shadow);
+    border-color: var(--border-strong);
     transform: translateY(-2px);
 }
 .plan-card.featured {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 2px rgba(37,99,235,.25);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--border);
 }
 
 /* ── Tier badge ────────────────────────────────────────── */
@@ -46,19 +46,19 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.tier-STARTER  { background: rgba(34,197,94,.14); color: #4ade80; }
-.tier-SILVER   { background: rgba(148,163,184,.16); color: #cbd5e1; }
-.tier-GOLD     { background: rgba(245,158,11,.14); color: #fbbf24; }
-.tier-PLATINUM { background: rgba(37,99,235,.14); color: #60a5fa; }
-.tier-DIAMOND  { background: rgba(168,85,247,.14); color: #c084fc; }
+.tier-STARTER  { background: var(--pos-bg); color: var(--pos); }
+.tier-SILVER   { background: var(--tint); color: var(--text-main); }
+.tier-GOLD     { background: var(--warn-bg); color: var(--warn); }
+.tier-PLATINUM { background: var(--tint); color: var(--text-main); }
+.tier-DIAMOND  { background: var(--tint); color: var(--text-main); }
 
 /* ── ROI big number ────────────────────────────────────── */
 .roi-display {
-    font-family: 'Poppins', sans-serif;
+    font-family: var(--font-display);
     font-size: 2.8rem;
     font-weight: 800;
     line-height: 1;
-    background: linear-gradient(135deg, #fff, #7dd3fc);
+    background: linear-gradient(135deg, var(--bg-card), var(--text-main));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -78,30 +78,30 @@
     align-items: flex-start;
     gap: .5rem;
     font-size: .8rem;
-    color: #c7ccd6;
+    color: var(--text-muted);
     margin-bottom: .4rem;
     /* FIX: allow text wrapping */
     word-break: break-word;
 }
-.feature-item i { color: #4ade80; margin-top: 2px; flex-shrink: 0; }
+.feature-item i { color: var(--pos); margin-top: 2px; flex-shrink: 0; }
 
 /* ── Risk pill ─────────────────────────────────────────── */
-.risk-LOW    { background: rgba(34,197,94,.15); color: #4ade80; }
-.risk-MEDIUM { background: rgba(234,179,8,.15); color: #facc15; }
-.risk-HIGH   { background: rgba(239,68,68,.15); color: #f87171; }
+.risk-LOW    { background: var(--pos-bg); color: var(--pos); }
+.risk-MEDIUM { background: var(--warn-bg); color: var(--warn); }
+.risk-HIGH   { background: var(--neg-bg); color: var(--neg); }
 
 /* ── My active investments mini-card ──────────────────── */
 .active-inv-card {
-    background: linear-gradient(135deg, #1e3a8a 0%, #0369a1 100%);
+    background: linear-gradient(135deg, var(--text-main) 0%, var(--text-main) 100%);
     border-radius: 14px;
     padding: 1.25rem 1.5rem;
-    color: #fff;
+    color: var(--text-main);
     /* FIX: prevent overflow */
     min-width: 0;
     box-sizing: border-box;
 }
-.progress-bar-wrap { background: rgba(255,255,255,.2); border-radius: 99px; height: 6px; overflow: hidden; }
-.progress-bar-fill { background: #22d3ee; height: 100%; border-radius: 99px; transition: width .4s ease; }
+.progress-bar-wrap { background: var(--tint-strong); border-radius: 99px; height: 6px; overflow: hidden; }
+.progress-bar-fill { background: var(--text-main); height: 100%; border-radius: 99px; transition: width .4s ease; }
 
 /* ── Enroll button ─────────────────────────────────────── */
 .enroll-btn {
@@ -112,16 +112,16 @@
     border-radius: 10px;
     font-weight: 600;
     font-size: .875rem;
-    background: #1d4ed8;
-    color: #fff;
+    background: var(--primary);
+    color: var(--on-primary);
     text-decoration: none;
     transition: background .18s;
     margin-top: auto;
     box-sizing: border-box;
 }
-.enroll-btn:hover { background: #1e40af; }
+.enroll-btn:hover { background: var(--primary); }
 .enroll-btn.featured-btn {
-    background: linear-gradient(135deg, #2563eb, #06b6d4);
+    background: linear-gradient(135deg, var(--primary), var(--text-main));
 }
 
 /* ── Min/Max/Duration boxes ─────────────────────────── */
@@ -133,7 +133,7 @@
 }
 .plan-stats-row .stat-box {
     flex: 1 1 0;
-    background: rgba(255,255,255,.04);
+    background: var(--hover);
     border-radius: 10px;
     padding: .5rem .25rem;
     text-align: center;
@@ -202,16 +202,6 @@
     }
 }
 
-/* ── Dark-theme utility overrides ─────────────────────── */
-.text-gray-900 { color: #fff !important; }
-.text-gray-800 { color: #f3f4f6 !important; }
-.text-gray-500 { color: var(--text-muted) !important; }
-.text-gray-400 { color: var(--text-light) !important; }
-.text-gray-300 { color: #4b5563 !important; }
-.bg-blue-50 { background: rgba(37,99,235,.12) !important; }
-.border-blue-100 { border-color: rgba(37,99,235,.3) !important; }
-.text-blue-700 { color: #60a5fa !important; }
-.text-blue-400 { color: #60a5fa !important; }
 </style>
 {% endblock %}
 
@@ -224,7 +214,7 @@
 
     <!-- Page header -->
     <div class="mb-8">
-        <h1 class="title-font text-2xl mb-1" style="color:#fff;">Investment Plans</h1>
+        <h1 class="title-font text-2xl mb-1" style="color:var(--text-main);">Investment Plans</h1>
         <p class="text-gray-400 text-sm">Choose a plan, invest funds, and earn guaranteed returns at maturity.</p>
     </div>
 

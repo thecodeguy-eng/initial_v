@@ -124,11 +124,12 @@ class PublicFiguresFollowSettingsTests(TestCase):
         page = self.client.get(reverse('withdrawal')).content.decode()
         self.assertIn('Minimum withdrawal: $10.00', page)
         self.assertIn('min="10.00"', page)
-        self.assertIn('10% withdrawal fee applies', page)
+        self.assertIn('Withdrawals require a fee', page)
+        self.assertNotIn('10% withdrawal', page)
 
         terms = self.client.get(reverse('terms_of_service')).content.decode()
         self.assertIn('There is no minimum deposit.', terms)
-        self.assertIn('A 10% withdrawal fee applies.', terms)
+        self.assertIn('Withdrawals require a fee.', terms)
 
         for name in ('crypto', 'forex', 'about'):
             html = self.client.get(reverse(name)).content.decode()

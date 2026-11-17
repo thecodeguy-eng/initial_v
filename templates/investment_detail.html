@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ plan.name }} Plan – Mirrorwavetrades{% endblock %}
+{% block title %}{{ plan.name }} Plan – Mirrormarkettrading{% endblock %}
 
 {% block extra_css %}
 <style>
 /* ── Hero card ─────────────────────────────────────────── */
 .detail-hero {
-    background: linear-gradient(135deg, #1e3a8a 0%, #0369a1 100%);
+    background: linear-gradient(135deg, var(--text-main) 0%, var(--text-main) 100%);
     border-radius: 16px;
     padding: 2rem;
-    color: #fff;
+    color: var(--text-main);
     /* FIX: prevent overflow on small screens */
     min-width: 0;
     box-sizing: border-box;
@@ -24,11 +24,11 @@
 
 /* ── ROI big number ────────────────────────────────────── */
 .roi-big {
-    font-family: 'Poppins', sans-serif;
+    font-family: var(--font-display);
     font-size: 3.5rem;
     font-weight: 800;
     line-height: 1;
-    color: #22d3ee;
+    color: var(--text-main);
     word-break: break-all;
 }
 
@@ -46,7 +46,7 @@
 }
 
 .meta-chip {
-    background: rgba(255,255,255,.15);
+    background: var(--tint-strong);
     border-radius: 8px;
     padding: .5rem .75rem;
     font-size: .8rem;
@@ -83,11 +83,11 @@
     padding: .65rem 0;
     border-bottom: 1px solid var(--border);
     font-size: .875rem;
-    color: #c7ccd6;
+    color: var(--text-muted);
     word-break: break-word;
 }
 .feature-row:last-child { border-bottom: none; }
-.feature-row i { color: #4ade80; width: 16px; text-align: center; flex-shrink: 0; margin-top: 2px; }
+.feature-row i { color: var(--pos); width: 16px; text-align: center; flex-shrink: 0; margin-top: 2px; }
 
 /* ── Invest card ───────────────────────────────────────── */
 .invest-card {
@@ -107,8 +107,8 @@
 
 /* ── Amount preview ────────────────────────────────────── */
 .amount-preview {
-    background: rgba(34,197,94,.08);
-    border: 1px solid rgba(34,197,94,.3);
+    background: var(--pos-bg);
+    border: 1px solid var(--pos-line);
     border-radius: 12px;
     padding: 1rem 1.25rem;
     display: none;
@@ -116,15 +116,15 @@
 .amount-preview.visible { display: block; }
 
 /* ── Tier / risk badges ────────────────────────────────── */
-.tier-STARTER  { background: rgba(34,197,94,.14); color: #4ade80; }
-.tier-SILVER   { background: rgba(148,163,184,.16); color: #cbd5e1; }
-.tier-GOLD     { background: rgba(245,158,11,.14); color: #fbbf24; }
-.tier-PLATINUM { background: rgba(37,99,235,.14); color: #60a5fa; }
-.tier-DIAMOND  { background: rgba(168,85,247,.14); color: #c084fc; }
+.tier-STARTER  { background: var(--pos-bg); color: var(--pos); }
+.tier-SILVER   { background: var(--tint); color: var(--text-main); }
+.tier-GOLD     { background: var(--warn-bg); color: var(--warn); }
+.tier-PLATINUM { background: var(--tint); color: var(--text-main); }
+.tier-DIAMOND  { background: var(--tint); color: var(--text-main); }
 
-.risk-LOW    { background: rgba(34,197,94,.15); color: #4ade80; }
-.risk-MEDIUM { background: rgba(234,179,8,.15); color: #facc15; }
-.risk-HIGH   { background: rgba(239,68,68,.15); color: #f87171; }
+.risk-LOW    { background: var(--pos-bg); color: var(--pos); }
+.risk-MEDIUM { background: var(--warn-bg); color: var(--warn); }
+.risk-HIGH   { background: var(--neg-bg); color: var(--neg); }
 
 .tier-badge, .risk-badge {
     display: inline-flex;
@@ -188,7 +188,7 @@
     flex-wrap: wrap;
 }
 .breadcrumb a { color: var(--text-muted); text-decoration: none; }
-.breadcrumb a:hover { color: #fff; }
+.breadcrumb a:hover { color: var(--text-main); }
 
 /* ── Page overflow guard ───────────────────────────────── */
 .dashboard-main {
@@ -215,7 +215,7 @@ section {
         <i class="fas fa-chevron-right text-xs"></i>
         <a href="{% url 'investment_plans' %}">Investment Plans</a>
         <i class="fas fa-chevron-right text-xs"></i>
-        <span style="color:#c7ccd6;">{{ plan.name }}</span>
+        <span style="color:var(--text-muted);">{{ plan.name }}</span>
     </div>
 
     <div class="detail-grid">
@@ -229,7 +229,7 @@ section {
                     <span class="tier-badge tier-{{ plan.tier }}">{{ plan.tier }}</span>
                     <span class="risk-badge risk-{{ plan.risk_level }}">{{ plan.risk_level }} Risk</span>
                     {% if plan.is_featured %}
-                    <span class="tier-badge" style="background:rgba(255,215,0,.2);color:#ffd700;">⭐ Popular</span>
+                    <span class="tier-badge" style="background:var(--warn-bg);color:#ffd700;">⭐ Popular</span>
                     {% endif %}
                 </div>
 
@@ -267,7 +267,7 @@ section {
             <!-- Features -->
             {% if plan.features %}
             <div style="background:var(--bg-card);border:1.5px solid var(--border);border-radius:14px;padding:1.25rem;">
-                <h3 style="font-weight:600;color:#fff;font-size:.875rem;margin-bottom:.75rem;">Plan Features</h3>
+                <h3 style="font-weight:600;color:var(--text-main);font-size:.875rem;margin-bottom:.75rem;">Plan Features</h3>
                 {% for feature in plan.features %}
                 <div class="feature-row">
                     <i class="fas fa-check-circle"></i>
@@ -278,8 +278,8 @@ section {
             {% endif %}
 
             <!-- How it works -->
-            <div style="background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.3);border-radius:14px;padding:1.25rem;">
-                <h3 style="font-weight:600;color:#93c5fd;font-size:.875rem;margin-bottom:.75rem;">
+            <div style="background:var(--tint);border:1px solid var(--border-strong);border-radius:14px;padding:1.25rem;">
+                <h3 style="font-weight:600;color:var(--text-main);font-size:.875rem;margin-bottom:.75rem;">
                     <i class="fas fa-info-circle" style="margin-right:.4rem;"></i>How It Works
                 </h3>
                 <ol style="font-size:.875rem;color:#bfdbfe;padding-left:1.25rem;margin:0;display:flex;flex-direction:column;gap:.5rem;list-style:decimal;">
@@ -294,9 +294,9 @@ section {
         <!-- RIGHT: Invest form -->
         <div style="min-width:0;">
             <div class="invest-card invest-card-sticky">
-                <h3 class="title-font text-lg mb-1" style="color:#fff;">Invest in {{ plan.name }}</h3>
-                <p style="font-size:.75rem;color:#6b7280;margin-bottom:1.25rem;">
-                    Your balance: <strong style="color:#c7ccd6;">${{ user.account_balance|floatformat:2 }}</strong>
+                <h3 class="title-font text-lg mb-1" style="color:var(--text-main);">Invest in {{ plan.name }}</h3>
+                <p style="font-size:.75rem;color:var(--text-light);margin-bottom:1.25rem;">
+                    Your balance: <strong style="color:var(--text-muted);">${{ user.account_balance|floatformat:2 }}</strong>
                 </p>
 
                 <!-- Alert messages -->
@@ -304,11 +304,11 @@ section {
 
                 <form id="invest-form">
                     {% csrf_token %}
-                    <label style="display:block;font-size:.75rem;font-weight:600;color:#9aa3b2;margin-bottom:.4rem;">
+                    <label style="display:block;font-size:.75rem;font-weight:600;color:var(--text-muted);margin-bottom:.4rem;">
                         Investment Amount (USD)
                     </label>
                     <div style="position:relative;margin-bottom:.75rem;">
-                        <span style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:#6b7280;font-weight:700;">$</span>
+                        <span style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--text-light);font-weight:700;">$</span>
                         <input
                             type="number"
                             id="amount-input"
@@ -317,8 +317,8 @@ section {
                             {% if plan.maximum_amount %}max="{{ plan.maximum_amount }}"{% endif %}
                             step="0.01"
                             placeholder="{{ plan.minimum_amount|floatformat:0 }}"
-                            style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:.65rem .75rem .65rem 2rem;font-size:.875rem;box-sizing:border-box;outline:none;transition:border-color .15s;background:rgba(255,255,255,.04);color:#fff;"
-                            onfocus="this.style.borderColor='#3b82f6'"
+                            style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:.65rem .75rem .65rem 2rem;font-size:.875rem;box-sizing:border-box;outline:none;transition:border-color .15s;background:var(--hover);color:var(--text-main);"
+                            onfocus="this.style.borderColor='var(--text-main)'"
                             onblur="this.style.borderColor='var(--border)'"
                         >
                     </div>
@@ -327,48 +327,48 @@ section {
                     <div class="quick-fill-row">
                         {% if plan.minimum_amount %}
                         <button type="button" onclick="setAmount({{ plan.minimum_amount }})"
-                            style="font-size:.75rem;background:rgba(255,255,255,.06);border:none;color:#c7ccd6;padding:.35rem .75rem;border-radius:8px;cursor:pointer;transition:background .15s;"
-                            onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.06)'">
+                            style="font-size:.75rem;background:var(--hover-2);border:none;color:var(--text-muted);padding:.35rem .75rem;border-radius:8px;cursor:pointer;transition:background .15s;"
+                            onmouseover="this.style.background='var(--hover-2)'" onmouseout="this.style.background='var(--hover-2)'">
                             Min ${{ plan.minimum_amount|floatformat:0 }}
                         </button>
                         {% endif %}
                         <button type="button" onclick="setAmount(500)"
-                            style="font-size:.75rem;background:rgba(255,255,255,.06);border:none;color:#c7ccd6;padding:.35rem .75rem;border-radius:8px;cursor:pointer;transition:background .15s;"
-                            onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.06)'">$500</button>
+                            style="font-size:.75rem;background:var(--hover-2);border:none;color:var(--text-muted);padding:.35rem .75rem;border-radius:8px;cursor:pointer;transition:background .15s;"
+                            onmouseover="this.style.background='var(--hover-2)'" onmouseout="this.style.background='var(--hover-2)'">$500</button>
                         <button type="button" onclick="setAmount(1000)"
-                            style="font-size:.75rem;background:rgba(255,255,255,.06);border:none;color:#c7ccd6;padding:.35rem .75rem;border-radius:8px;cursor:pointer;transition:background .15s;"
-                            onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.06)'">$1,000</button>
+                            style="font-size:.75rem;background:var(--hover-2);border:none;color:var(--text-muted);padding:.35rem .75rem;border-radius:8px;cursor:pointer;transition:background .15s;"
+                            onmouseover="this.style.background='var(--hover-2)'" onmouseout="this.style.background='var(--hover-2)'">$1,000</button>
                         <button type="button" onclick="setAmount(5000)"
-                            style="font-size:.75rem;background:rgba(255,255,255,.06);border:none;color:#c7ccd6;padding:.35rem .75rem;border-radius:8px;cursor:pointer;transition:background .15s;"
-                            onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.06)'">$5,000</button>
+                            style="font-size:.75rem;background:var(--hover-2);border:none;color:var(--text-muted);padding:.35rem .75rem;border-radius:8px;cursor:pointer;transition:background .15s;"
+                            onmouseover="this.style.background='var(--hover-2)'" onmouseout="this.style.background='var(--hover-2)'">$5,000</button>
                     </div>
 
                     <!-- Return preview -->
                     <div id="preview" class="amount-preview mb-4">
-                        <p style="font-size:.75rem;color:#4ade80;font-weight:600;margin-bottom:.5rem;">Estimated Returns</p>
+                        <p style="font-size:.75rem;color:var(--pos);font-weight:600;margin-bottom:.5rem;">Estimated Returns</p>
                         <div style="display:flex;justify-content:space-between;font-size:.875rem;margin-bottom:.25rem;">
-                            <span style="color:#9aa3b2;">You invest</span>
-                            <span style="font-weight:600;color:#fff;" id="p-invested">–</span>
+                            <span style="color:var(--text-muted);">You invest</span>
+                            <span style="font-weight:600;color:var(--text-main);" id="p-invested">–</span>
                         </div>
                         <div style="display:flex;justify-content:space-between;font-size:.875rem;margin-bottom:.25rem;">
-                            <span style="color:#9aa3b2;">ROI ({{ plan.roi_percentage }}%)</span>
-                            <span style="font-weight:600;color:#4ade80;" id="p-profit">–</span>
+                            <span style="color:var(--text-muted);">ROI ({{ plan.roi_percentage }}%)</span>
+                            <span style="font-weight:600;color:var(--pos);" id="p-profit">–</span>
                         </div>
-                        <div style="display:flex;justify-content:space-between;font-size:.875rem;padding-top:.5rem;border-top:1px solid rgba(34,197,94,.3);">
-                            <span style="color:#c7ccd6;font-weight:600;">Total at maturity</span>
-                            <span style="font-weight:700;color:#4ade80;" id="p-total">–</span>
+                        <div style="display:flex;justify-content:space-between;font-size:.875rem;padding-top:.5rem;border-top:1px solid var(--pos-line);">
+                            <span style="color:var(--text-muted);font-weight:600;">Total at maturity</span>
+                            <span style="font-weight:700;color:var(--pos);" id="p-total">–</span>
                         </div>
-                        <p style="font-size:.7rem;color:#6b7280;margin-top:.5rem;">Credited after {{ plan.duration_days }} days</p>
+                        <p style="font-size:.7rem;color:var(--text-light);margin-top:.5rem;">Credited after {{ plan.duration_days }} days</p>
                     </div>
 
                     <button type="submit" id="submit-btn"
-                        style="width:100%;background:#2563eb;color:#fff;font-weight:600;padding:.85rem;border-radius:12px;font-size:.875rem;border:none;cursor:pointer;transition:background .18s;display:flex;align-items:center;justify-content:center;gap:.5rem;box-sizing:border-box;"
-                        onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+                        style="width:100%;background:var(--primary);color:var(--on-primary);font-weight:600;padding:.85rem;border-radius:12px;font-size:.875rem;border:none;cursor:pointer;transition:background .18s;display:flex;align-items:center;justify-content:center;gap:.5rem;box-sizing:border-box;"
+                        onmouseover="this.style.background='var(--text-main)'" onmouseout="this.style.background='var(--text-main)'">
                         <i class="fas fa-lock" style="font-size:.7rem;opacity:.7;"></i> Confirm Investment
                     </button>
                 </form>
 
-                <p style="text-align:center;font-size:.7rem;color:#6b7280;margin-top:.75rem;">
+                <p style="text-align:center;font-size:.7rem;color:var(--text-light);margin-top:.75rem;">
                     <i class="fas fa-shield-alt" style="margin-right:.25rem;"></i> Funds secured &amp; insured
                 </p>
             </div>
@@ -456,8 +456,8 @@ function showAlert(msg, type) {
     el.textContent = msg;
     el.className = 'mb-4 p-3 rounded-lg text-sm font-medium';
     el.style.cssText = type === 'success'
-        ? 'background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.3);'
-        : 'background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.3);';
+        ? 'background:var(--pos-bg);color:var(--pos);border:1px solid var(--pos-line);'
+        : 'background:var(--neg-bg);color:var(--neg);border:1px solid var(--neg-line);';
     el.classList.remove('hidden');
     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
