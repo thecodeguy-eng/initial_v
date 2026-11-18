@@ -32,6 +32,7 @@
 .h-stats { border-top: 1px solid var(--border); position: relative; background: var(--bg); }
 .h-stat { padding: 1.5rem 0 1.5rem 1.25rem; border-left: 1px solid var(--border); }
 .h-stat:first-child { border-left: 0; padding-left: 0; }
+.h-stat b::after { content: ''; display: block; width: 28px; height: 4px; background: var(--pop); margin-top: .5rem; border: 1px solid var(--text-main); }
 .h-stat b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: clamp(1.4rem, 3vw, 2.1rem); letter-spacing: -.05em; }
 .h-stat span { font-size: .78rem; color: var(--text-muted); }
 @media (max-width: 767px) { .h-stat:nth-child(3) { border-left: 0; padding-left: 0; } .h-stat:nth-child(n+3) { border-top: 1px solid var(--border); } }
@@ -56,7 +57,7 @@
 .m-row { display: grid; grid-template-columns: 3.2rem 1fr auto; align-items: center; gap: 1rem; padding: 1.6rem .5rem; border-bottom: 1px solid var(--border);
     text-decoration: none; color: var(--text-main); transition: background .15s, color .15s, padding .2s; }
 @media (min-width: 768px) { .m-row { grid-template-columns: 4rem 14rem 1fr auto; padding: 1.9rem 1rem; } }
-.m-row:hover { background: var(--text-main); color: var(--bg); padding-left: 1.5rem; }
+.m-row:hover { background: var(--pop); color: var(--on-pop); padding-left: 1.5rem; }
 .m-row:hover .m-desc, .m-row:hover .m-num { color: inherit; opacity: .75; }
 .m-num { font-family: var(--font-mono); font-size: .75rem; color: var(--text-light); }
 .m-name { font-family: var(--font-display); font-weight: 500; font-size: clamp(1.5rem, 3vw, 2.2rem); letter-spacing: -.04em; }
@@ -96,7 +97,8 @@
 @media (min-width: 900px) { .s-grid { grid-template-columns: repeat(3, 1fr); } }
 .s-item { padding: 2rem 1.5rem 2.25rem 0; border-bottom: 1px solid var(--border); }
 @media (min-width: 900px) { .s-item { border-bottom: 0; border-right: 1px solid var(--border); padding: 2.25rem 2rem 2.5rem 2rem; } .s-item:first-child { padding-left: 0; } .s-item:last-child { border-right: 0; } }
-.s-n { font-family: var(--font-mono); font-size: clamp(3rem, 7vw, 5rem); font-weight: 500; letter-spacing: -.08em; line-height: 1; color: transparent; -webkit-text-stroke: 1.5px var(--text-main); margin-bottom: 1.25rem; }
+.s-item:hover .s-n { color: var(--pop); }
+.s-n { transition: color .2s; font-family: var(--font-mono); font-size: clamp(3rem, 7vw, 5rem); font-weight: 500; letter-spacing: -.08em; line-height: 1; color: transparent; -webkit-text-stroke: 1.5px var(--text-main); margin-bottom: 1.25rem; }
 .s-item h3 { font-size: 1.25rem; font-weight: 600; margin: 0 0 .5rem; }
 .s-item p { color: var(--text-muted); font-size: .92rem; line-height: 1.65; margin: 0; }
 
@@ -105,7 +107,7 @@
 @media (min-width: 700px) { .b-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1024px) { .b-grid { grid-template-columns: repeat(3, 1fr); } .b-wide { grid-column: span 2; } }
 .b-cell { background: var(--bg-card); padding: 2rem 1.75rem; min-height: 220px; display: flex; flex-direction: column; transition: background .15s; }
-.b-cell:hover { background: var(--bg-elevated); }
+.b-cell:hover { background: var(--bg-elevated); } .b-cell:hover .b-ico { background: var(--pop); color: var(--on-pop); border-color: var(--text-main); }
 .b-ico { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid var(--border-strong); border-radius: var(--r); margin-bottom: auto; font-size: .9rem; }
 .b-cell h3 { font-size: 1.2rem; font-weight: 600; margin: 2.5rem 0 .4rem; }
 .b-cell p { color: var(--text-muted); font-size: .88rem; line-height: 1.6; margin: 0; max-width: 28rem; }
@@ -140,13 +142,13 @@ html[data-theme="dark"] .platform-logo-card img { filter: grayscale(1) brightnes
 @media (min-width: 640px) { .p-grid { grid-template-columns: repeat(2, 1fr); } } @media (min-width: 1024px) { .p-grid { grid-template-columns: repeat(4, 1fr); } }
 .home-plan-card { border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1.6rem; background: var(--bg-card); display: flex; flex-direction: column; transition: border-color .15s, transform .2s; }
 .home-plan-card:hover { border-color: var(--text-main); transform: translateY(-3px); }
-.home-plan-card.featured { background: var(--text-main); color: var(--bg); border-color: var(--text-main); }
+.home-plan-card.featured { background: var(--pop); color: var(--on-pop); border-color: var(--text-main); box-shadow: 5px 5px 0 var(--text-main); }
 .home-plan-card.featured * { color: inherit !important; }
 .home-plan-tier { font-family: var(--font-mono); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted); }
 .home-plan-roi { font-family: var(--font-mono); font-size: 2.6rem; letter-spacing: -.07em; font-weight: 500; line-height: 1; }
 .home-plan-cta { margin-top: auto; text-align: center; padding: .65rem; border: 1px solid var(--border-strong); border-radius: var(--r); font-size: .82rem; font-weight: 600; text-decoration: none; transition: all .15s; }
 .home-plan-cta:hover { background: var(--text-main); color: var(--bg); }
-.home-plan-card.featured .home-plan-cta { border-color: var(--bg); } .home-plan-card.featured .home-plan-cta:hover { background: var(--bg); color: var(--text-main) !important; }
+.home-plan-card.featured .home-plan-cta { border-color: var(--on-pop); } .home-plan-card.featured .home-plan-cta:hover { background: var(--on-pop); color: var(--pop) !important; }
 
 /* numbers */
 .n-grid { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--border-strong); }
@@ -175,8 +177,8 @@ html[data-theme="dark"] .platform-logo-card img { filter: grayscale(1) brightnes
 .cta-block { background: var(--text-main); color: var(--bg); border-radius: var(--r-lg); padding: clamp(2.5rem, 7vw, 5.5rem) clamp(1.5rem, 5vw, 4rem); position: relative; overflow: hidden; }
 .cta-block h2 { font-family: var(--font-display); font-weight: 600; letter-spacing: -.055em; line-height: .96; font-size: clamp(2.4rem, 7vw, 5.2rem); margin: 0 0 1.25rem; max-width: 14ch; }
 .cta-block p { opacity: .7; max-width: 32rem; margin-bottom: 2rem; line-height: 1.65; }
-.cta-block .btn-primary { background: var(--bg); color: var(--text-main); border-color: var(--bg); }
-.cta-block .btn-primary:hover { opacity: .85; }
+.cta-block .btn-primary { background: var(--pop); color: var(--on-pop); border-color: var(--pop); box-shadow: none; }
+.cta-block .btn-primary:hover { background: var(--pop-hover); }
 .cta-block .btn-outline { color: var(--bg); border-color: color-mix(in srgb, var(--bg) 40%, transparent); }
 .cta-block .btn-outline:hover { background: var(--bg); color: var(--text-main); }
 .cta-meta { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin-top: 2.25rem; font-family: var(--font-mono); font-size: .7rem; letter-spacing: .05em; opacity: .65; text-transform: uppercase; }
@@ -191,10 +193,10 @@ html[data-theme="dark"] .platform-logo-card img { filter: grayscale(1) brightnes
         <div class="h-hero-grid">
             <div>
                 <span class="eyebrow">Multi-asset trading platform</span>
-                <h1 class="h-title">One account.<br><em>Every</em> market.</h1>
+                <h1 class="h-title">One account.<br><span class="hl">Every</span> market.</h1>
                 <p class="h-lead">Trade stocks, crypto, forex and options from a single account. Copy proven traders, deploy bots, and keep your portfolio moving around the clock.</p>
                 <div class="flex flex-col sm:flex-row gap-3">
-                    <a href="{% url 'register' %}" class="btn-primary" style="padding:.95rem 1.6rem;font-size:.9rem;">Open free account <i class="fas fa-arrow-right" style="font-size:.75rem;"></i></a>
+                    <a href="{% url 'register' %}" class="btn-pop" style="padding:.95rem 1.6rem;font-size:.9rem;">Open free account <i class="fas fa-arrow-right" style="font-size:.75rem;"></i></a>
                     <a href="#how-it-works" class="btn-outline" style="padding:.95rem 1.6rem;font-size:.9rem;">See how it works</a>
                 </div>
             </div>

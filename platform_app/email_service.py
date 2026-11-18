@@ -359,6 +359,170 @@ class ResendEmailService:
 
         return self.send_email(self.admin_emails, 'Admin', subject, _email_shell(f"New support message from {escape(username)}", body_html, logo_url))
 
+    def send_user_transaction_approved_email(self, *, user_email, user_name, transaction_type, amount, new_balance=None,
+                                             crypto=None, reference=None, plan_name=None, dashboard_url=None, logo_url=None):
+        """Tell the customer that their deposit / withdrawal / bot purchase was approved."""
+        b = BRAND
+        dashboard_url = dashboard_url or "https://mirrormarkettrading.com/dashboard/"
+
+        if transaction_type == 'DEPOSIT':
+            subject = "Your deposit has been approved - Mirrormarkettrading"
+            heading = "Deposit approved"
+            intro = f"Good news - your payment was verified and <strong style=\"color:{b['text_main']};\">${escape(amount)}</strong> has been added to your account balance."
+            cta = "View my balance"
+        elif transaction_type == 'WITHDRAWAL':
+            subject = "Your withdrawal has been approved - Mirrormarkettrading"
+            heading = "Withdrawal approved"
+            intro = (f"Your withdrawal of <strong style=\"color:{b['text_main']};\">${escape(amount)}</strong> has been approved. "
+                     "The payout is being processed and will reach your wallet shortly.")
+            cta = "View my account"
+        elif transaction_type == 'BOT_PURCHASE':
+            subject = "Your trading bot is active - Mirrormarkettrading"
+            heading = "Trading bot activated"
+            what = f" ({escape(plan_name)})" if plan_name else ""
+            intro = f"Your payment of <strong style=\"color:{b['text_main']};\">${escape(amount)}</strong> was verified and your trading bot plan{what} is now active."
+            cta = "Open my bots"
+            dashboard_url = dashboard_url.replace('/dashboard/', '/trading-bot/')
+        else:
+            subject = "Your payment has been approved - Mirrormarkettrading"
+            heading = "Payment approved"
+            intro = f"Your payment of <strong style=\"color:{b['text_main']};\">${escape(amount)}</strong> has been approved."
+            cta = "Go to my dashboard"
+
+        def row(label, value):
+            return f"""
+            <tr>
+                <td style="padding:10px 0; border-bottom:1px solid {b['border']}; color:{b['text_muted']}; font-size:13px; width:130px;">{label}</td>
+                <td style="padding:10px 0; border-bottom:1px solid {b['border']}; color:{b['text_main']}; font-size:14px;">{escape(str(value))}</td>
+            </tr>
+            """
+
+        rows = row('Amount', f'${amount}')
+        if crypto:
+            rows += row('Paid with', crypto)
+        if reference:
+            rows += row('Reference', reference)
+        if new_balance is not None:
+            rows += row('Account balance', f'${new_balance}')
+
+        body_html = f"""
+            <h2 style="color:{b['text_main']}; margin:0 0 14px 0; font-size:22px; text-align:center;">{heading}</h2>
+            <p style="color:{b['text_muted']}; font-size:15px; line-height:1.6; margin:0 0 22px 0; text-align:center;">
+                Hello <strong style="color:{b['text_main']};">{escape(user_name)}</strong>,<br>{intro}
+            </p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">{rows}</table>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr><td align="center">{_button(cta, dashboard_url, b)}</td></tr>
+            </table>
+            <p style="color:{b['text_faint']}; font-size:12px; line-height:1.5; margin:18px 0 0 0; text-align:center;">
+                Didn't make this transaction? Contact our support team right away.
+            </p>
+        """
+        return self.send_email(user_email, user_name, subject, _email_shell(heading, body_html, logo_url))
+
+    # ------------------------------------------------------------------
+    # Payment / approval notices
+    # ------------------------------------------------------------------
+    def _admin_notice(self, recipients, subject, kicker, heading, rows, cta_label=None, cta_url=None, logo_url=None):
+        """Shared layout for the admin-facing notices below."""
+        b = BRAND
+        if not recipients:
+            logger.warning("No admin recipient configured - skipping '%s'", subject)
+            return {'success': False, 'error': 'No admin recipient configured'}
+
+        def row(label, value, bold=False):
+            weight = 'bold' if bold else 'normal'
+            return f"""
+            <tr>
+                <td style="padding:10px 0; border-bottom:1px solid {b['border']}; color:{b['text_muted']}; font-size:13px; width:140px;">{label}</td>
+                <td style="padding:10px 0; border-bottom:1px solid {b['border']}; color:{b['text_main']}; font-size:14px; font-weight:{weight};">{escape(str(value))}</td>
+            </tr>
+            """
+
+        rows_html = ''.join(row(label, value, bold) for label, value, bold in rows)
+        cta_html = ''
+        if cta_url:
+            cta_html = f"""<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px;">
+                <tr><td align="center">{_button(cta_label, cta_url, b)}</td></tr>
+            </table>"""
+
+        body_html = f"""
+            <p style="color:{b['accent']}; font-size:12px; text-transform:uppercase; letter-spacing:.05em; margin:0 0 8px 0; text-align:center;">
+                {escape(kicker)}
+            </p>
+            <h2 style="color:{b['text_main']}; margin:0 0 22px 0; font-size:20px; text-align:center;">
+                {escape(heading)}
+            </h2>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                {rows_html}
+            </table>
+            {cta_html}
+        """
+        return self.send_email(recipients, 'Admin', subject, _email_shell(heading, body_html, logo_url))
+
+    def send_admin_transaction_approved_email(self, *, kind, username, email, amount, status_label, new_balance=None,
+                                              crypto=None, reference=None, approved_by=None, when=None,
+                                              admin_url=None, logo_url=None):
+        """Tell ADMIN_NOTIFICATION_EMAIL_TWO that something was approved."""
+        rows = [
+            ('Approved', kind, True),
+            ('User', f'{username} ({email})', False),
+            ('Amount', f'${amount}', True),
+        ]
+        if crypto:
+            rows.append(('Paid with', crypto, False))
+        if reference:
+            rows.append(('Reference', reference, False))
+        rows.append(('Result', status_label, False))
+        if new_balance is not None:
+            rows.append(('New balance', f'${new_balance}', False))
+        if approved_by:
+            rows.append(('Approved by', approved_by, False))
+        if when:
+            rows.append(('When', when, False))
+        return self._admin_notice(
+            list(getattr(settings, 'ADMIN_APPROVAL_EMAILS', [])),
+            f'Approved: {kind} - ${amount} - {username}',
+            'Approval confirmation', f'{kind} approved', rows,
+            'Open in Admin' if admin_url else None, admin_url, logo_url,
+        )
+
+    def send_admin_payment_pending_email(self, *, kind, username, email, amount, crypto=None, reference=None,
+                                         when=None, admin_url=None, logo_url=None):
+        """Tell both admin inboxes that a payment / withdrawal is waiting to be verified."""
+        rows = [
+            ('Needs review', kind, True),
+            ('User', f'{username} ({email})', False),
+            ('Amount', f'${amount}', True),
+        ]
+        if crypto:
+            rows.append(('Crypto', crypto, False))
+        if reference:
+            rows.append(('Reference', reference, False))
+        if when:
+            rows.append(('Submitted', when, False))
+        return self._admin_notice(
+            self.admin_emails,
+            f'Awaiting approval: {kind} - ${amount} - {username}',
+            'Action needed', f'{kind} waiting for approval', rows,
+            'Review & approve', admin_url, logo_url,
+        )
+
+    def send_admin_withdrawal_access_email(self, *, username, email, granted, approved_by=None, when=None, admin_url=None, logo_url=None):
+        """Tell ADMIN_NOTIFICATION_EMAIL_TWO that a user's withdrawal access changed."""
+        state = 'granted' if granted else 'revoked'
+        rows = [('User', f'{username} ({email})', True), ('Withdrawal access', state.title(), True)]
+        if approved_by:
+            rows.append(('Changed by', approved_by, False))
+        if when:
+            rows.append(('When', when, False))
+        return self._admin_notice(
+            list(getattr(settings, 'ADMIN_APPROVAL_EMAILS', [])),
+            f'Withdrawal access {state}: {username}',
+            'Approval confirmation', f'Withdrawal access {state}', rows,
+            'Open user' if admin_url else None, admin_url, logo_url,
+        )
+
 
 # Convenience functions for easy import
 def send_password_reset_code(user_email, user_name, reset_code, logo_url=None):
@@ -397,3 +561,23 @@ def send_admin_support_message_email(username, message_preview, chat_url=None, l
     """Convenience function to notify the admin inbox of a new support chat message."""
     email_service = ResendEmailService()
     return email_service.send_admin_support_message_email(username, message_preview, chat_url, logo_url)
+
+
+def send_admin_transaction_approved_email(**kwargs):
+    """Convenience function: approval confirmation to ADMIN_NOTIFICATION_EMAIL_TWO."""
+    return ResendEmailService().send_admin_transaction_approved_email(**kwargs)
+
+
+def send_admin_payment_pending_email(**kwargs):
+    """Convenience function: a payment/withdrawal is waiting for review (both admin inboxes)."""
+    return ResendEmailService().send_admin_payment_pending_email(**kwargs)
+
+
+def send_admin_withdrawal_access_email(**kwargs):
+    """Convenience function: withdrawal access granted/revoked (ADMIN_NOTIFICATION_EMAIL_TWO)."""
+    return ResendEmailService().send_admin_withdrawal_access_email(**kwargs)
+
+
+def send_user_transaction_approved_email(**kwargs):
+    """Convenience function: tell the customer their deposit/withdrawal/bot purchase was approved."""
+    return ResendEmailService().send_user_transaction_approved_email(**kwargs)

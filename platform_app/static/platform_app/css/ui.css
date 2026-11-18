@@ -46,6 +46,12 @@
     --success: var(--pos);
     --danger:  var(--neg);
 
+    /* third colour: electric lime. Use as a FILL with dark text only (never as text on white). */
+    --pop:          #c8f31d;
+    --pop-hover:    #b6e00f;
+    --on-pop:       #0a0a0a;
+    --pop-soft:     rgba(200,243,29,.35);
+
     --overlay:      rgba(10,10,10,.45);
     --shadow:       0 1px 0 rgba(10,10,10,.04), 0 12px 32px -12px rgba(10,10,10,.18);
     --r:            4px;
@@ -80,6 +86,10 @@ html[data-theme="dark"] {
     --pos:          #4ade80;  --pos-bg:  rgba(74,222,128,.12);  --pos-line: rgba(74,222,128,.35);
     --neg:          #f87171;  --neg-bg:  rgba(248,113,113,.12); --neg-line: rgba(248,113,113,.35);
     --warn:         #fbbf24;  --warn-bg: rgba(251,191,36,.12);  --warn-line: rgba(251,191,36,.35);
+
+    --pop:          #d4ff2e;
+    --pop-hover:    #c2ee1c;
+    --pop-soft:     rgba(212,255,46,.28);
 
     --overlay:      rgba(0,0,0,.65);
     --shadow:       0 0 0 1px rgba(255,255,255,.04), 0 16px 40px -12px rgba(0,0,0,.8);
@@ -460,3 +470,32 @@ html[data-theme="dark"] .theme-toggle .ico-sun { display: inline; } html[data-th
 
 /* google translate noise */
 .goog-te-banner-frame, .goog-te-balloon-frame, #goog-gt-tt, #google_translate_element { display: none !important; }
+
+
+/* ==========================================================================
+   LIME ACCENT — the third colour
+   ========================================================================== */
+::selection { background: var(--pop); color: var(--on-pop); }
+.btn-pop { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; font-weight: 600; font-size: .85rem; padding: .65rem 1.25rem;
+    border-radius: var(--r); background: var(--pop); color: var(--on-pop); border: 1px solid var(--text-main); text-decoration: none; white-space: nowrap;
+    box-shadow: 3px 3px 0 var(--text-main); transition: transform .12s, box-shadow .12s, background .15s; cursor: pointer; }
+.btn-pop:hover { background: var(--pop-hover); transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--text-main); }
+.btn-pop:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--text-main); }
+.hl { background: var(--pop); color: var(--on-pop); padding: 0 .14em; margin: 0 -.04em; border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+
+input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus, .auth-input:focus { border-color: var(--text-main); box-shadow: 0 0 0 3px var(--pop-soft); }
+
+.eyebrow::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: .6rem; background: var(--pop); border: 1px solid var(--text-main); vertical-align: 1px; }
+.site-util .util-dot { background: var(--pop); }
+.nav-link.is-active { box-shadow: inset 0 -2px 0 var(--pop); }
+.nav-dropdown a:hover .nav-dd-icon { background: var(--pop); color: var(--on-pop); border-color: var(--text-main); }
+
+/* active states become lime pills */
+.sidebar-link.active, .mobile-nav-pill:hover, .mobile-nav-pill.active { background: var(--pop); color: var(--on-pop); border-color: var(--text-main); }
+.sidebar-link.active .sidebar-icon { color: var(--on-pop); }
+.stat-icon { background: var(--pop) !important; border-color: var(--text-main) !important; }
+.stat-icon i { color: var(--on-pop) !important; }
+#chat-fab { background: var(--pop); color: var(--on-pop); border: 1px solid var(--text-main); box-shadow: 3px 3px 0 var(--text-main); }
+.sidebar-deposit-btn { background: var(--pop); color: var(--on-pop); border-color: var(--text-main); }
+.sidebar-deposit-btn:hover { background: var(--pop-hover); }
+.lang-option.active { background: var(--pop); color: var(--on-pop); }

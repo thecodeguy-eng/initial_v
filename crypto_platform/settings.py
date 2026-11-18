@@ -201,6 +201,8 @@ RESEND_SENDER_NAME = config('RESEND_SENDER_NAME', default='Mirrormarkettrading')
 # Inboxes that get a notification on every new registration / support message.
 ADMIN_NOTIFICATION_EMAIL = config('ADMIN_NOTIFICATION_EMAIL', default='')
 ADMIN_NOTIFICATION_EMAIL_TWO = config('ADMIN_NOTIFICATION_EMAIL_TWO', default='')
+# Approvals (deposit / withdrawal / bot purchase / withdrawal access) are reported to inbox TWO only.
+ADMIN_APPROVAL_EMAILS = [e.strip() for e in (ADMIN_NOTIFICATION_EMAIL_TWO,) if e and e.strip()]
 ADMIN_NOTIFICATION_EMAILS = [e.strip() for e in (ADMIN_NOTIFICATION_EMAIL, ADMIN_NOTIFICATION_EMAIL_TWO) if e and e.strip()]
 
 # Logging Configuration

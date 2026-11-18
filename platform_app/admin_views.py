@@ -10,6 +10,16 @@ from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
 import json
+import logging
+from django.urls import reverse
+from django.templatetags.static import static
+
+from .email_service import (
+    send_admin_transaction_approved_email, send_admin_withdrawal_access_email,
+    send_user_transaction_approved_email,
+)
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     User, WalletAddress, TradingBotPlan, UserBotSubscription,
@@ -23,6 +33,78 @@ from .models import (
 def is_admin(user):
     """Check if user is admin"""
     return user.is_authenticated and (user.is_superuser or user.is_staff)
+
+
+TX_KIND = {
+    'DEPOSIT': 'Deposit',
+    'WITHDRAWAL': 'Withdrawal',
+    'BOT_PURCHASE': 'Trading bot purchase',
+    'COPY_TRADE': 'Copy trading payment',
+    'BONUS': 'Bonus',
+    'PROFIT': 'Profit credit',
+}
+
+
+def _notify_transaction_approved(request, transaction, user):
+    """Email ADMIN_NOTIFICATION_EMAIL_TWO that a transaction was approved.
+
+    Never raises: a mail outage must not undo (or hide) an approval that already happened.
+    """
+    try:
+        kind = TX_KIND.get(transaction.transaction_type, transaction.get_transaction_type_display())
+        if transaction.transaction_type == 'DEPOSIT':
+            result = 'Credited to the user\'s balance'
+        elif transaction.transaction_type == 'WITHDRAWAL':
+            result = 'Deducted from the user\'s balance - send the payout'
+        elif transaction.transaction_type == 'BOT_PURCHASE':
+            plan = transaction.bot_plan.get_plan_type_display() if transaction.bot_plan else 'bot'
+            result = f'Bot plan activated ({plan})'
+        else:
+            result = 'Approved'
+        crypto = None
+        if transaction.crypto_currency:
+            crypto = transaction.crypto_currency
+            if transaction.crypto_amount:
+                crypto = f'{transaction.crypto_amount:.8f} {transaction.crypto_currency}'
+        send_admin_transaction_approved_email(
+            kind=kind,
+            username=user.username,
+            email=user.email,
+            amount=f'{transaction.amount:,.2f}',
+            status_label=result,
+            new_balance=f'{user.account_balance:,.2f}',
+            crypto=crypto,
+            reference=transaction.blockchain_transaction_id or str(transaction.transaction_id)[:8],
+            approved_by=request.user.username,
+            when=timezone.now().strftime('%d %b %Y, %H:%M UTC'),
+            admin_url=request.build_absolute_uri(reverse('admin_transactions_list') + '?status=approved'),
+            logo_url=request.build_absolute_uri(static('platform_app/img/logo-512.png')),
+        )
+    except Exception:
+        logger.exception('Approval email failed for transaction %s', transaction.pk)
+
+    # The customer gets their own confirmation (deposits, withdrawals and bot purchases).
+    if transaction.transaction_type in ('DEPOSIT', 'WITHDRAWAL', 'BOT_PURCHASE') and user.email:
+        try:
+            crypto = None
+            if transaction.crypto_currency:
+                crypto = transaction.crypto_currency
+                if transaction.crypto_amount:
+                    crypto = f'{transaction.crypto_amount:.8f} {transaction.crypto_currency}'
+            send_user_transaction_approved_email(
+                user_email=user.email,
+                user_name=user.legal_first_name or user.username,
+                transaction_type=transaction.transaction_type,
+                amount=f'{transaction.amount:,.2f}',
+                new_balance=f'{user.account_balance:,.2f}',
+                crypto=crypto,
+                reference=transaction.blockchain_transaction_id or None,
+                plan_name=transaction.bot_plan.get_plan_type_display() if transaction.bot_plan else None,
+                dashboard_url=request.build_absolute_uri(reverse('dashboard')),
+                logo_url=request.build_absolute_uri(static('platform_app/img/logo-512.png')),
+            )
+        except Exception:
+            logger.exception('Customer approval email failed for transaction %s', transaction.pk)
 
 
 @user_passes_test(is_admin)
@@ -193,6 +275,18 @@ def admin_user_detail(request, user_id):
                 ip_address=request.META.get('REMOTE_ADDR')
             )
             
+            if user.withdrawal_approved:
+                try:
+                    send_admin_withdrawal_access_email(
+                        username=user.username, email=user.email, granted=True,
+                        approved_by=request.user.username,
+                        when=timezone.now().strftime('%d %b %Y, %H:%M UTC'),
+                        admin_url=request.build_absolute_uri(reverse('admin_user_detail', args=[user.id])),
+                        logo_url=request.build_absolute_uri(static('platform_app/img/logo-512.png')),
+                    )
+                except Exception:
+                    logger.exception('Withdrawal-access email failed for %s', user.pk)
+
             messages.success(request, f'Withdrawal {status}')
         
         elif action == 'toggle_active':
@@ -418,6 +512,7 @@ def admin_transaction_action(request, transaction_id):
                 ip_address=request.META.get('REMOTE_ADDR')
             )
             
+            _notify_transaction_approved(request, transaction, user)
             messages.success(request, 'Transaction approved successfully')
         
         elif action == 'reject':
@@ -1136,6 +1231,10 @@ def admin_transaction_create(request):
             elif transaction_type in ('BONUS', 'PROFIT'):
                 user.account_balance += amount
                 user.save()
+
+        if status in ('APPROVED', 'COMPLETED'):
+            user.refresh_from_db()
+            _notify_transaction_approved(request, transaction, user)
 
         SystemLog.objects.create(
             level='INFO',

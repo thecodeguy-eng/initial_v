@@ -199,3 +199,103 @@ class MoneySafetyTests(TestCase):
         self.client.post(url, {'action': 'approve'})
         self.user.refresh_from_db()
         self.assertEqual(self.user.account_balance, Decimal('119.91'))
+
+
+class ApprovalFlowTests(TestCase):
+    """Admin approval credits the right thing and reports it to inbox TWO only."""
+
+    def setUp(self):
+        self.admin = make_user('boss', 'boss@example.com', is_staff=True, is_superuser=True)
+        self.user = make_user('payer', 'payer@example.com', account_balance=Decimal('10'), withdrawal_approved=True)
+        self.client.force_login(self.admin)
+        # Never let a test reach the real Resend API (the key in .env is live).
+        user_mail = patch('platform_app.admin_views.send_user_transaction_approved_email')
+        self.user_mail = user_mail.start()
+        self.addCleanup(user_mail.stop)
+
+    def approve(self, tx):
+        return self.client.post(reverse('admin_transaction_action', args=[tx.id]), {'action': 'approve'})
+
+    @patch('platform_app.admin_views.send_admin_transaction_approved_email')
+    def test_deposit_approval_credits_balance_and_emails_once(self, mail):
+        tx = Transaction.objects.create(user=self.user, transaction_type='DEPOSIT', amount=Decimal('250'), crypto_currency='BTC')
+        self.approve(tx)
+        self.approve(tx)  # double click
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.account_balance, Decimal('260'))
+        self.assertEqual(self.user.total_deposit, Decimal('250'))
+        self.assertEqual(mail.call_count, 1)
+        self.assertEqual(mail.call_args.kwargs['kind'], 'Deposit')
+        self.assertEqual(mail.call_args.kwargs['new_balance'], '260.00')
+
+    @patch('platform_app.admin_views.send_admin_transaction_approved_email')
+    def test_rejected_transaction_sends_no_approval_email(self, mail):
+        tx = Transaction.objects.create(user=self.user, transaction_type='DEPOSIT', amount=Decimal('250'))
+        self.client.post(reverse('admin_transaction_action', args=[tx.id]), {'action': 'reject'})
+        mail.assert_not_called()
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.account_balance, Decimal('10'))
+
+    @patch('platform_app.admin_views.send_admin_transaction_approved_email', side_effect=RuntimeError('resend down'))
+    def test_email_failure_does_not_undo_approval(self, mail):
+        tx = Transaction.objects.create(user=self.user, transaction_type='DEPOSIT', amount=Decimal('5'))
+        self.approve(tx)
+        tx.refresh_from_db()
+        self.assertEqual(tx.status, 'APPROVED')
+
+    @patch('platform_app.admin_views.send_admin_withdrawal_access_email')
+    def test_granting_withdrawal_access_emails(self, mail):
+        other = make_user('newbie', 'newbie@example.com')
+        self.client.post(reverse('admin_user_detail', args=[other.id]), {'action': 'toggle_withdrawal'})
+        self.assertEqual(mail.call_count, 1)
+        self.client.post(reverse('admin_user_detail', args=[other.id]), {'action': 'toggle_withdrawal'})  # revoke
+        self.assertEqual(mail.call_count, 1)
+
+    @patch('platform_app.email_service.requests.post')
+    def test_approval_email_goes_to_inbox_two_only(self, post):
+        from django.test import override_settings
+        post.return_value.json.return_value = {'id': 'x'}
+        with override_settings(RESEND_API_KEY='re_test', ADMIN_APPROVAL_EMAILS=['two@example.com'],
+                               ADMIN_NOTIFICATION_EMAILS=['one@example.com', 'two@example.com']):
+            from .email_service import send_admin_transaction_approved_email
+            send_admin_transaction_approved_email(kind='Deposit', username='u', email='u@x.com', amount='5.00',
+                                                  status_label='Credited')
+        self.assertEqual(post.call_args.kwargs['json']['to'], ['two@example.com'])
+
+    @patch('platform_app.views.send_admin_payment_pending_email')
+    def test_withdrawal_request_alerts_admins(self, mail):
+        PlatformSettings.objects.create(minimum_withdrawal=Decimal('1'))
+        self.client.force_login(self.user)
+        with patch('platform_app.views.get_crypto_price', return_value=Decimal('50000')):
+            self.client.post(reverse('withdrawal'), {'amount': '5', 'cryptocurrency': 'BTC', 'wallet_address': 'bc1qxyz'})
+        self.assertEqual(mail.call_count, 1)
+        self.assertEqual(mail.call_args.kwargs['kind'], 'Withdrawal')
+
+    @patch('platform_app.admin_views.send_admin_transaction_approved_email')
+    def test_customer_gets_their_own_approval_email(self, admin_mail):
+        tx = Transaction.objects.create(user=self.user, transaction_type='DEPOSIT', amount=Decimal('75'))
+        self.approve(tx)
+        self.assertEqual(self.user_mail.call_count, 1)
+        kw = self.user_mail.call_args.kwargs
+        self.assertEqual(kw['user_email'], 'payer@example.com')
+        self.assertEqual(kw['transaction_type'], 'DEPOSIT')
+        self.assertEqual(kw['new_balance'], '85.00')
+
+    @patch('platform_app.admin_views.send_admin_transaction_approved_email')
+    def test_customer_gets_no_email_on_rejection(self, admin_mail):
+        tx = Transaction.objects.create(user=self.user, transaction_type='DEPOSIT', amount=Decimal('75'))
+        self.client.post(reverse('admin_transaction_action', args=[tx.id]), {'action': 'reject'})
+        self.user_mail.assert_not_called()
+
+    @patch('platform_app.email_service.requests.post')
+    def test_customer_email_is_addressed_to_the_customer_only(self, post):
+        from django.test import override_settings
+        post.return_value.json.return_value = {'id': 'x'}
+        with override_settings(RESEND_API_KEY='re_test'):
+            from .email_service import ResendEmailService
+            for kind in ('DEPOSIT', 'WITHDRAWAL', 'BOT_PURCHASE'):
+                ResendEmailService().send_user_transaction_approved_email(
+                    user_email='payer@example.com', user_name='Alice', transaction_type=kind, amount='75.00', new_balance='85.00')
+                self.assertEqual(post.call_args.kwargs['json']['to'], ['payer@example.com'])
+        subjects = [c.kwargs['json']['subject'] for c in post.call_args_list]
+        self.assertTrue(any('deposit' in s for s in subjects) and any('withdrawal' in s for s in subjects) and any('bot' in s for s in subjects))

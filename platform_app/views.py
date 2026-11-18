@@ -19,7 +19,7 @@ import requests
 from datetime import datetime, timedelta
 import logging
 from django.utils import timezone
-from .email_service import send_password_reset_code, send_welcome_email, send_deposit_reminder, send_admin_new_registration_email, send_admin_support_message_email
+from .email_service import send_password_reset_code, send_welcome_email, send_deposit_reminder, send_admin_new_registration_email, send_admin_support_message_email, send_admin_payment_pending_email
 from .geoip import get_country_from_ip, get_client_ip
 from .security import rate_limited, reset_rate_limit
 
@@ -1000,6 +1000,28 @@ def deposit(request):
     return render(request, 'deposit.html')
 
 
+
+def _notify_admins_pending(request, transaction, kind):
+    """Email both admin inboxes that a payment / withdrawal is waiting to be approved."""
+    try:
+        crypto = transaction.crypto_currency
+        if crypto and transaction.crypto_amount:
+            crypto = f'{transaction.crypto_amount:.8f} {crypto}'
+        send_admin_payment_pending_email(
+            kind=kind,
+            username=request.user.username,
+            email=request.user.email,
+            amount=f'{transaction.amount:,.2f}',
+            crypto=crypto,
+            reference=transaction.blockchain_transaction_id or str(transaction.transaction_id)[:8],
+            when=timezone.now().strftime('%d %b %Y, %H:%M UTC'),
+            admin_url=request.build_absolute_uri('/custom-admin/transactions/?status=pending'),
+            logo_url=request.build_absolute_uri(static('platform_app/img/logo-512.png')),
+        )
+    except Exception:
+        logger.exception('Pending-payment email failed for transaction %s', transaction.pk)
+
+
 # Payment Page with Real-time Crypto Conversion
 @login_required
 def payment_page(request):
@@ -1083,6 +1105,11 @@ def payment_page(request):
         
         logger.info(f"Payment proof submitted: User {request.user.username}, Amount ${amount}, Crypto {actual_crypto_amount:.8f} {selected_crypto}")
         
+        _notify_admins_pending(
+            request, transaction,
+            'Deposit' if purchase_type == 'deposit' else 'Trading bot purchase' if purchase_type == 'bot' else 'Copy trading payment',
+        )
+
         request.session.pop('deposit_amount', None)
         request.session.pop('purchase_amount', None)
         request.session.pop('purchase_type', None)
@@ -1149,6 +1176,7 @@ def withdrawal(request):
         
         logger.info(f"Withdrawal requested: User {request.user.username}, Amount ${amount}, Crypto {crypto_amount:.8f} {crypto_currency}")
         
+        _notify_admins_pending(request, transaction, 'Withdrawal')
         messages.success(request, 'Withdrawal request submitted! Awaiting admin approval.')
         return redirect('dashboard')
     
