@@ -1,88 +1,346 @@
-<!-- ===================================== -->
-<!-- support_chats.html -->
 {% extends 'custom_admin/admin_base.html' %}
 
-{% block title %}Support Chats{% endblock %}
+{% block title %}Support inbox{% endblock %}
+{% block crumb %}Support inbox{% endblock %}
+
+{% block extra_css %}
+/* the inbox fills the screen under the top bar */
+.ad-body { padding: 0 !important; }
+.ad-body > * { max-width: none !important; }
+.ib { display: grid; grid-template-columns: 360px 1fr; height: calc(100vh - 58px); height: calc(100dvh - 58px); background: var(--bg); }
+.ib-list { border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; background: var(--bg); }
+.ib-list-head { padding: 1rem 1rem .75rem; border-bottom: 1px solid var(--border); display: grid; gap: .7rem; }
+.ib-title { display: flex; align-items: center; justify-content: space-between; }
+.ib-title h2 { font-family: var(--font-display); font-weight: 600; letter-spacing: -.04em; font-size: 1.35rem; margin: 0; }
+.ib-search { position: relative; }
+.ib-search i { position: absolute; left: .8rem; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: .8rem; }
+.ib-search input { width: 100%; padding: .55rem .8rem .55rem 2.2rem; font-size: .85rem; }
+.ib-tabs { display: flex; gap: .35rem; flex-wrap: wrap; }
+.ib-tab { padding: .25rem .65rem; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--text-muted); font-size: .74rem; font-weight: 500; cursor: pointer; transition: all .12s; }
+.ib-tab:hover { color: var(--text-main); border-color: var(--border-strong); }
+.ib-tab.on { background: var(--text-main); color: var(--bg); border-color: var(--text-main); }
+.ib-tab b { font-family: var(--font-mono); font-weight: 500; margin-left: .3rem; opacity: .7; }
+.ib-rows { flex: 1; overflow-y: auto; min-height: 0; }
+.ib-row { display: flex; gap: .8rem; padding: .85rem 1rem; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .1s; position: relative; }
+.ib-row:hover { background: var(--hover); }
+.ib-row.sel { background: var(--hover-2); box-shadow: inset 3px 0 0 var(--text-main); }
+.ib-av { width: 40px; height: 40px; border-radius: 50%; background: var(--text-main); color: var(--bg); display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; font-size: .82rem; flex-shrink: 0; }
+.ib-row.closed .ib-av { background: var(--tint-strong); color: var(--text-muted); }
+.ib-mid { min-width: 0; flex: 1; }
+.ib-top { display: flex; justify-content: space-between; gap: .5rem; align-items: baseline; }
+.ib-name { font-weight: 600; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ib-time { font-family: var(--font-mono); font-size: .66rem; color: var(--text-light); flex-shrink: 0; }
+.ib-prev { display: flex; justify-content: space-between; gap: .5rem; align-items: center; margin-top: .15rem; }
+.ib-prev p { margin: 0; font-size: .8rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ib-row.unread .ib-name, .ib-row.unread .ib-prev p { color: var(--text-main); font-weight: 600; }
+.ib-badge { min-width: 20px; height: 20px; padding: 0 .35rem; border-radius: 999px; background: var(--pop); color: var(--on-pop); border: 1px solid var(--text-main);
+    font-family: var(--font-mono); font-size: .68rem; font-weight: 600; display: grid; place-items: center; flex-shrink: 0; }
+.ib-empty { padding: 2.5rem 1.5rem; text-align: center; color: var(--text-light); font-size: .85rem; }
+
+.ib-thread { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg-elevated); }
+.ib-th-head { display: flex; align-items: center; gap: .8rem; padding: .8rem 1.1rem; background: var(--bg); border-bottom: 1px solid var(--border); }
+.ib-th-head .who { min-width: 0; flex: 1; }
+.ib-th-head .who b { display: block; font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ib-th-head .who a { font-size: .74rem; color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; }
+.ib-th-actions { display: flex; gap: .4rem; align-items: center; }
+.ib-back { display: none; }
+.ib-msgs { flex: 1; overflow-y: auto; padding: 1.1rem; display: flex; flex-direction: column; gap: .6rem; min-height: 0; }
+.ib-msg { display: flex; flex-direction: column; gap: 2px; max-width: 100%; }
+.ib-msg.me { align-items: flex-end; }
+.ib-bubble { padding: .6rem .9rem; max-width: min(78%, 560px); word-wrap: break-word; overflow-wrap: anywhere; white-space: pre-wrap; font-size: .88rem; line-height: 1.5; }
+.ib-msg.me .ib-bubble { background: var(--primary); color: var(--on-primary); border-radius: 14px 14px 3px 14px; }
+.ib-msg.them .ib-bubble { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border); border-radius: 14px 14px 14px 3px; }
+.ib-meta { font-size: .68rem; color: var(--text-light); font-family: var(--font-mono); padding: 0 .3rem; }
+.ib-day { align-self: center; font-family: var(--font-mono); font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-light); padding: .3rem 0; }
+.ib-comp { padding: .8rem 1rem; background: var(--bg); border-top: 1px solid var(--border); }
+.ib-comp-row { display: flex; gap: .6rem; align-items: flex-end; }
+.ib-comp textarea { flex: 1; resize: none; padding: .65rem .85rem; font-size: .9rem; max-height: 160px; line-height: 1.45; }
+.ib-hint { font-size: .68rem; color: var(--text-light); margin: .4rem .2rem 0; font-family: var(--font-mono); }
+.ib-err { color: var(--neg); font-size: .78rem; margin-top: .35rem; display: none; }
+.ib-none { margin: auto; text-align: center; color: var(--text-light); padding: 2rem; }
+.ib-none i { font-size: 2rem; margin-bottom: .8rem; display: block; }
+
+.ib-modal { border: 1px solid var(--border-strong); border-radius: var(--r-lg); background: var(--bg-card); color: var(--text-main); padding: 0; width: min(480px, calc(100vw - 2rem)); box-shadow: var(--shadow); }
+.ib-modal::backdrop { background: var(--overlay); }
+.ib-modal-in { padding: 1.4rem; display: grid; gap: .9rem; }
+.ib-modal h3 { font-family: var(--font-display); font-size: 1.25rem; margin: 0; letter-spacing: -.03em; }
+.ib-results { border: 1px solid var(--border); border-radius: var(--r); max-height: 190px; overflow-y: auto; display: none; }
+.ib-results button { display: flex; width: 100%; gap: .7rem; align-items: center; padding: .55rem .75rem; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--border); cursor: pointer; color: var(--text-main); }
+.ib-results button:last-child { border-bottom: 0; }
+.ib-results button:hover { background: var(--hover-2); }
+.ib-results small { display: block; color: var(--text-muted); font-size: .72rem; }
+.ib-picked { display: none; align-items: center; justify-content: space-between; gap: .6rem; padding: .55rem .75rem; border: 1px solid var(--text-main); border-radius: var(--r); background: var(--pop); color: var(--on-pop); font-size: .85rem; font-weight: 600; }
+.ib-picked button { background: none; border: 0; cursor: pointer; color: inherit; font-size: 1rem; }
+
+@media (max-width: 860px) {
+    .ib { grid-template-columns: 1fr; }
+    .ib .ib-thread { display: none; }
+    .ib.open .ib-list { display: none; }
+    .ib.open .ib-thread { display: flex; }
+    .ib-back { display: inline-grid; }
+}
+{% endblock %}
 
 {% block admin_content %}
-<div class="mb-8">
-    <h2 class="text-3xl font-bold gradient-text mb-2">Support Chats</h2>
-    <p class="text-gray-400">Manage customer support conversations</p>
+<div class="ib" id="ib">
+    <!-- ── Conversations ── -->
+    <aside class="ib-list">
+        <div class="ib-list-head">
+            <div class="ib-title">
+                <h2>Inbox</h2>
+                <button type="button" class="btn-pop" style="padding:.4rem .8rem;font-size:.78rem;" onclick="openNew()"><i class="fas fa-pen"></i> New message</button>
+            </div>
+            <div class="ib-search"><i class="fas fa-search"></i><input type="search" id="ibSearch" placeholder="Search name, email or message" autocomplete="off"></div>
+            <div class="ib-tabs" id="ibTabs">
+                <button class="ib-tab on" data-f="all">All</button>
+                <button class="ib-tab" data-f="unread">Unread<b id="cntUnread">0</b></button>
+                <button class="ib-tab" data-f="active">Active</button>
+                <button class="ib-tab" data-f="closed">Closed</button>
+            </div>
+        </div>
+        <div class="ib-rows" id="ibRows"></div>
+    </aside>
+
+    <!-- ── Open conversation ── -->
+    <section class="ib-thread" id="ibThread">
+        <div class="ib-none" id="ibNone"><i class="fas fa-comments"></i><p>Select a conversation, or start a new one.</p></div>
+
+        <div id="ibOpen" style="display:none;flex-direction:column;min-height:0;flex:1;">
+            <div class="ib-th-head">
+                <button class="icon-btn ib-back" type="button" onclick="closeThread()" aria-label="Back to inbox"><i class="fas fa-arrow-left"></i></button>
+                <div class="ib-av" id="thAv"></div>
+                <div class="who"><b id="thName"></b><a id="thLink" href="#"></a></div>
+                <div class="ib-th-actions">
+                    <span class="badge" id="thStatus"></span>
+                    <button class="icon-btn" type="button" id="thToggle" title="Close / reopen"><i class="fas fa-lock"></i></button>
+                    <button class="icon-btn" type="button" id="thDelete" title="Delete conversation"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <div class="ib-msgs" id="ibMsgs"></div>
+            <div class="ib-comp">
+                <div class="ib-comp-row">
+                    <textarea id="ibText" rows="1" maxlength="2000" placeholder="Write a reply…"></textarea>
+                    <button class="btn-primary" type="button" id="ibSend" style="padding:.7rem 1.1rem;"><i class="fas fa-paper-plane"></i></button>
+                </div>
+                <div class="ib-err" id="ibErr"></div>
+                <p class="ib-hint">Enter to send · Shift+Enter for a new line · the customer is emailed when you reply</p>
+            </div>
+        </div>
+    </section>
 </div>
 
-<div class="admin-card p-6 rounded-xl mb-6">
-    <form method="GET" class="flex gap-4">
-        <select name="status" class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white">
-            <option value="all">All Status</option>
-            <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
-            <option value="closed" {% if status == 'closed' %}selected{% endif %}>Closed</option>
-        </select>
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg text-white">
-            <i class="fas fa-filter mr-2"></i> Filter
-        </button>
-    </form>
-</div>
-
-<div class="admin-card rounded-xl overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="w-full">
-            <thead class="bg-slate-800">
-                <tr>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase">Chat ID</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase">User</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase">Messages</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase">Status</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase">Last Updated</th>
-                    <th class="px-6 py-4 text-center text-xs font-semibold text-gray-400 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-700">
-                {% for chat in chats %}
-                <tr class="hover:bg-slate-800/50">
-                    <td class="px-6 py-4 text-gray-400">#{{ chat.id }}</td>
-                    <td class="px-6 py-4 text-white">{{ chat.user.username }}</td>
-                    <td class="px-6 py-4 text-gray-400">
-                        {{ chat.message_count }} messages
-                        {% if chat.unread_count > 0 %}
-                        <span class="ml-2 px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full">
-                            {{ chat.unread_count }} unread
-                        </span>
-                        {% endif %}
-                    </td>
-                    <td class="px-6 py-4">
-                        <span class="px-2 py-1 rounded-full text-xs {% if chat.status == 'ACTIVE' %}bg-green-500/20 text-green-400{% else %}bg-gray-500/20 text-gray-400{% endif %}">
-                            {{ chat.status }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-gray-400">{{ chat.updated_at|timesince }} ago</td>
-                    <td class="px-6 py-4">
-                        <div class="flex justify-center items-center gap-2">
-                            <a href="{% url 'admin_chat_detail' chat.id %}" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-white text-sm">
-                                <i class="fas fa-eye"></i> View
-                            </a>
-                            <form method="POST" action="{% url 'admin_chat_close' chat.id %}" class="inline">
-                                {% csrf_token %}
-                                <button type="submit" class="{% if chat.status == 'ACTIVE' %}bg-yellow-600 hover:bg-yellow-700{% else %}bg-green-600 hover:bg-green-700{% endif %} px-3 py-1 rounded text-white text-sm">
-                                    <i class="fas {% if chat.status == 'ACTIVE' %}fa-lock{% else %}fa-lock-open{% endif %}"></i>
-                                </button>
-                            </form>
-                            <form method="POST" action="{% url 'admin_chat_delete' chat.id %}" class="inline"
-                                  onsubmit="return confirm('Delete chat #{{ chat.id }} and all its messages?')">
-                                {% csrf_token %}
-                                <button type="submit" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-white text-sm">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="px-6 py-8 text-center text-gray-400">No chats found</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<!-- ── New message ── -->
+<dialog class="ib-modal" id="ibNew">
+    <div class="ib-modal-in">
+        <h3>New message</h3>
+        <div>
+            <label class="eyebrow" style="display:block;margin-bottom:.4rem;">To</label>
+            <input type="search" id="nuQ" placeholder="Search a user by name, username or email" autocomplete="off" style="width:100%;padding:.6rem .8rem;font-size:.88rem;">
+            <div class="ib-results" id="nuRes"></div>
+            <div class="ib-picked" id="nuPicked"><span id="nuPickedTxt"></span><button type="button" onclick="clearPick()" aria-label="Remove">&times;</button></div>
+        </div>
+        <div>
+            <label class="eyebrow" style="display:block;margin-bottom:.4rem;">Message</label>
+            <textarea id="nuText" rows="4" maxlength="2000" placeholder="Write your message…" style="width:100%;padding:.6rem .8rem;font-size:.9rem;resize:vertical;"></textarea>
+        </div>
+        <div class="ib-err" id="nuErr"></div>
+        <div style="display:flex;justify-content:flex-end;gap:.5rem;">
+            <button type="button" class="btn-outline" onclick="document.getElementById('ibNew').close()">Cancel</button>
+            <button type="button" class="btn-pop" id="nuSend">Send &amp; email them</button>
+        </div>
     </div>
-</div>
+</dialog>
+
+{{ initial_chats|json_script:"initialChats" }}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const CSRF = '{{ csrf_token }}';
+    const SELECTED = {{ selected_chat_id|default:"null" }};
+    const URLS = {
+        list: '{% url "admin_support_list_json" %}',
+        users: '{% url "admin_support_users_json" %}',
+        newChat: '{% url "admin_support_new" %}',
+        base: '{% url "admin_support_chats" %}',
+    };
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const initials = n => (String(n).trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2) || '?').toUpperCase();
+    const hm = iso => new Date(iso).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    function ago(iso) {
+        const s = Math.max(0, (Date.now() - new Date(iso)) / 1000);
+        if (s < 60) return 'now';
+        if (s < 3600) return Math.floor(s / 60) + 'm';
+        if (s < 86400) return Math.floor(s / 3600) + 'h';
+        if (s < 604800) return Math.floor(s / 86400) + 'd';
+        return new Date(iso).toLocaleDateString([], {month: 'short', day: 'numeric'});
+    }
+    async function post(url, body, extraHeaders) {
+        const r = await fetch(url, {method: 'POST', headers: Object.assign({'Content-Type': 'application/json', 'X-CSRFToken': CSRF}, extraHeaders || {}), body: JSON.stringify(body || {})});
+        let d = {}; try { d = await r.json(); } catch (e) {}
+        if (!r.ok) throw new Error(d.error || 'Something went wrong. Please try again.');
+        return d;
+    }
+
+    let chats = JSON.parse($('initialChats').textContent);
+    let filter = 'all', query = '', current = null, lastId = 0, sending = false;
+
+    /* ── list ── */
+    function renderList() {
+        const q = query.toLowerCase();
+        const rows = chats.filter(c => {
+            if (filter === 'unread' && !c.unread) return false;
+            if (filter === 'active' && c.status !== 'ACTIVE') return false;
+            if (filter === 'closed' && c.status !== 'CLOSED') return false;
+            return !q || (c.name + ' ' + c.username + ' ' + c.email + ' ' + c.last_text).toLowerCase().includes(q);
+        });
+        $('cntUnread').textContent = chats.filter(c => c.unread).length;
+        $('ibRows').innerHTML = rows.length ? rows.map(c => `
+            <div class="ib-row ${c.id === current ? 'sel' : ''} ${c.unread ? 'unread' : ''} ${c.status === 'CLOSED' ? 'closed' : ''}" data-id="${c.id}">
+                <div class="ib-av">${esc(initials(c.name))}</div>
+                <div class="ib-mid">
+                    <div class="ib-top"><span class="ib-name">${esc(c.name)}</span><span class="ib-time">${ago(c.last_at)}</span></div>
+                    <div class="ib-prev"><p>${c.last_sender === 'SUPPORT' ? 'You: ' : ''}${esc(c.last_text) || '<i>No messages yet</i>'}</p>${c.unread ? `<span class="ib-badge">${c.unread}</span>` : ''}</div>
+                </div>
+            </div>`).join('') : '<div class="ib-empty">No conversations here.</div>';
+    }
+    $('ibRows').addEventListener('click', e => { const r = e.target.closest('.ib-row'); if (r) openChat(+r.dataset.id); });
+    $('ibSearch').addEventListener('input', e => { query = e.target.value.trim(); renderList(); });
+    $('ibTabs').addEventListener('click', e => {
+        const b = e.target.closest('.ib-tab'); if (!b) return;
+        document.querySelectorAll('.ib-tab').forEach(t => t.classList.toggle('on', t === b));
+        filter = b.dataset.f; renderList();
+    });
+    async function refreshList() {
+        try { const r = await fetch(URLS.list); if (r.ok) { chats = (await r.json()).chats; renderList(); } } catch (e) {}
+    }
+
+    /* ── thread ── */
+    function bubble(m) {
+        const me = m.sender_type === 'SUPPORT';
+        return `<div class="ib-msg ${me ? 'me' : 'them'}" data-id="${m.id}">
+            <div class="ib-bubble">${esc(m.message)}</div>
+            <div class="ib-meta">${me ? esc(m.sender_name) + ' · ' : ''}${hm(m.created_at)}</div></div>`;
+    }
+    let lastDay = '';
+    function addMessages(list) {
+        const box = $('ibMsgs');
+        const stick = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+        list.forEach(m => {
+            if (box.querySelector(`[data-id="${m.id}"]`)) return;
+            const day = new Date(m.created_at).toDateString();
+            if (day !== lastDay) { lastDay = day; box.insertAdjacentHTML('beforeend', `<div class="ib-day">${esc(new Date(m.created_at).toLocaleDateString([], {weekday: 'short', month: 'short', day: 'numeric'}))}</div>`); }
+            box.insertAdjacentHTML('beforeend', bubble(m));
+            lastId = Math.max(lastId, m.id);
+        });
+        if (stick || list.length === box.children.length) box.scrollTop = box.scrollHeight;
+    }
+    function paintHeader(c) {
+        $('thAv').textContent = initials(c.name);
+        $('thName').textContent = c.name;
+        $('thLink').textContent = c.email + ' · view profile'; $('thLink').href = c.user_url;
+        const st = $('thStatus'); st.textContent = c.status; st.className = 'badge ' + (c.status === 'ACTIVE' ? 'badge-green' : '');
+        $('thToggle').innerHTML = `<i class="fas fa-${c.status === 'ACTIVE' ? 'lock' : 'lock-open'}"></i>`;
+        $('thToggle').title = c.status === 'ACTIVE' ? 'Close conversation' : 'Reopen conversation';
+    }
+    async function openChat(id, push) {
+        current = id; lastId = 0; lastDay = '';
+        $('ibMsgs').innerHTML = '';
+        $('ibNone').style.display = 'none'; $('ibOpen').style.display = 'flex';
+        $('ib').classList.add('open');
+        if (push !== false) history.replaceState(null, '', URLS.base + id + '/');
+        renderList();
+        await pollThread(true);
+        $('ibText').focus({preventScroll: true});
+    }
+    async function pollThread(first) {
+        if (!current) return;
+        const id = current;
+        try {
+            const r = await fetch(`${URLS.base}${id}/messages/?after=${lastId}`);
+            if (!r.ok) return;
+            const d = await r.json();
+            if (id !== current) return;
+            paintHeader(Object.assign({}, d.chat));
+            addMessages(d.messages);
+            if (d.messages.length) { const c = chats.find(x => x.id === id); if (c) c.unread = 0; renderList(); }
+            if (first) $('ibMsgs').scrollTop = $('ibMsgs').scrollHeight;
+        } catch (e) {}
+    }
+    function closeThread() { current = null; $('ib').classList.remove('open'); $('ibOpen').style.display = 'none'; $('ibNone').style.display = ''; history.replaceState(null, '', URLS.base); renderList(); }
+    window.closeThread = closeThread;
+
+    async function send() {
+        const t = $('ibText'), text = t.value.trim();
+        if (!text || sending || !current) return;
+        sending = true; $('ibSend').disabled = true; $('ibErr').style.display = 'none';
+        try {
+            const d = await post(`${URLS.base}${current}/send/`, {message: text});
+            t.value = ''; autosize();
+            if (d.chat_id !== current) { await openChat(d.chat_id); }   // customer's chat was re-pointed to their active one
+            else addMessages([d.message]);
+            refreshList();
+        } catch (e) { $('ibErr').textContent = e.message; $('ibErr').style.display = 'block'; }
+        sending = false; $('ibSend').disabled = false; t.focus();
+    }
+    $('ibSend').addEventListener('click', send);
+    $('ibText').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+    function autosize() { const t = $('ibText'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 160) + 'px'; }
+    $('ibText').addEventListener('input', autosize);
+
+    $('thToggle').addEventListener('click', async () => {
+        if (!current) return;
+        try { await post(`/custom-admin/support/${current}/close/`, {}, {'X-Requested-With': 'fetch'}); await Promise.all([pollThread(false), refreshList()]); }
+        catch (e) { alert(e.message); }
+    });
+    $('thDelete').addEventListener('click', async () => {
+        if (!current || !confirm('Delete this conversation and all its messages? This cannot be undone.')) return;
+        try { await post(`/custom-admin/support/${current}/delete/`, {}, {'X-Requested-With': 'fetch'}); closeThread(); refreshList(); }
+        catch (e) { alert(e.message); }
+    });
+
+    /* ── new message ── */
+    let picked = null, tm = null;
+    window.openNew = () => { picked = null; $('nuQ').value = ''; $('nuText').value = ''; $('nuRes').style.display = 'none'; $('nuPicked').style.display = 'none'; $('nuQ').style.display = ''; $('nuErr').style.display = 'none'; $('ibNew').showModal(); $('nuQ').focus(); };
+    window.clearPick = () => { picked = null; $('nuPicked').style.display = 'none'; $('nuQ').style.display = ''; $('nuQ').focus(); };
+    $('nuQ').addEventListener('input', () => {
+        clearTimeout(tm);
+        const q = $('nuQ').value.trim();
+        if (q.length < 2) { $('nuRes').style.display = 'none'; return; }
+        tm = setTimeout(async () => {
+            try {
+                const d = await (await fetch(URLS.users + '?q=' + encodeURIComponent(q))).json();
+                $('nuRes').innerHTML = d.users.length ? d.users.map(u => `<button type="button" data-id="${u.id}" data-label="${esc(u.name)} (${esc(u.email)})"><span class="ib-av" style="width:32px;height:32px;font-size:.7rem;">${esc(initials(u.name))}</span><span><b>${esc(u.name)}</b><small>@${esc(u.username)} · ${esc(u.email)}</small></span></button>`).join('') : '<div class="ib-empty" style="padding:1rem;">No users found.</div>';
+                $('nuRes').style.display = 'block';
+            } catch (e) {}
+        }, 220);
+    });
+    $('nuRes').addEventListener('click', e => {
+        const b = e.target.closest('button[data-id]'); if (!b) return;
+        picked = +b.dataset.id; $('nuPickedTxt').textContent = b.dataset.label;
+        $('nuPicked').style.display = 'flex'; $('nuQ').style.display = 'none'; $('nuRes').style.display = 'none'; $('nuText').focus();
+    });
+    $('nuSend').addEventListener('click', async () => {
+        const text = $('nuText').value.trim(), err = $('nuErr');
+        err.style.display = 'none';
+        if (!picked) { err.textContent = 'Choose who to message.'; err.style.display = 'block'; return; }
+        if (!text) { err.textContent = 'Write a message first.'; err.style.display = 'block'; return; }
+        $('nuSend').disabled = true;
+        try {
+            const d = await post(URLS.newChat, {user_id: picked, message: text});
+            $('ibNew').close();
+            await refreshList(); await openChat(d.chat_id);
+        } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+        $('nuSend').disabled = false;
+    });
+
+    /* ── boot + live updates ── */
+    renderList();
+    if (SELECTED) openChat(SELECTED, false);
+    setInterval(() => { if (!document.hidden) { pollThread(false); refreshList(); } }, 4000);
+    setInterval(renderList, 60000);   // keeps the "5m / 2h" labels fresh
+})();
+</script>
 {% endblock %}

@@ -5,7 +5,8 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db import transaction as db_transaction
-from django.db.models import Sum, Count, Q, Avg
+from django.db.models import Sum, Count, Q, Avg, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
@@ -16,8 +17,9 @@ from django.templatetags.static import static
 
 from .email_service import (
     send_admin_transaction_approved_email, send_admin_withdrawal_access_email,
-    send_user_transaction_approved_email,
+    send_user_transaction_approved_email, send_user_support_reply_email,
 )
+from .security import rate_limited
 
 logger = logging.getLogger(__name__)
 
@@ -958,62 +960,209 @@ def _save_investment_plan(request, plan):
     return None
 
 
-# ── Support Chats ─────────────────────────────────────────────────────────────
+# ── Support inbox ─────────────────────────────────────────────────────────────
 
-@user_passes_test(is_admin)
-def admin_support_chats(request):
-    """Manage support chats"""
-    status = request.GET.get('status', 'all')
-    
+MAX_CHAT_MESSAGE_LENGTH = 2000
+
+
+def _admin_display_name(user):
+    full = f'{user.first_name} {user.last_name}'.strip()
+    return full or user.username
+
+
+def _chat_rows(status='all', limit=200):
+    """Conversation list for the inbox (newest activity first)."""
+    last = SupportMessage.objects.filter(chat=OuterRef('pk')).order_by('-created_at')
     chats = SupportChat.objects.select_related('user').annotate(
-        message_count=Count('messages'),
-        unread_count=Count('messages', filter=Q(messages__is_read=False, messages__sender_type='USER'))
-    ).order_by('-updated_at')
-    
+        unread_count=Count('messages', filter=Q(messages__is_read=False, messages__sender_type='USER')),
+        last_text=Subquery(last.values('message')[:1]),
+        last_sender=Subquery(last.values('sender_type')[:1]),
+        last_at=Subquery(last.values('created_at')[:1]),
+    ).annotate(sort_at=Coalesce('last_at', 'created_at')).order_by('-sort_at')
     if status == 'active':
         chats = chats.filter(status='ACTIVE')
     elif status == 'closed':
         chats = chats.filter(status='CLOSED')
-    
-    context = {
-        'chats': chats,
-        'status': status,
+    elif status == 'unread':
+        chats = chats.filter(unread_count__gt=0)
+    return [{
+        'id': c.id,
+        'user_id': c.user_id,
+        'username': c.user.username,
+        'name': f'{c.user.legal_first_name} {c.user.legal_last_name}'.strip() or c.user.username,
+        'email': c.user.email,
+        'status': c.status,
+        'unread': c.unread_count,
+        'last_text': (c.last_text or '')[:140],
+        'last_sender': c.last_sender or '',
+        'last_at': (c.last_at or c.created_at).isoformat(),
+    } for c in chats[:limit]]
+
+
+def _message_json(m):
+    return {
+        'id': m.id,
+        'sender_type': m.sender_type,
+        'sender_name': m.sender_name,
+        'message': m.message,
+        'created_at': m.created_at.isoformat(),
     }
-    
-    return render(request, 'custom_admin/support_chats.html', context)
+
+
+def _email_customer_about_reply(request, chat, text, is_new_conversation=False):
+    """Email the customer that support wrote to them. Never raises.
+
+    Replies in a burst only email once per 5 minutes per chat (the first email already
+    brings the customer to the conversation); a brand-new conversation always emails.
+    """
+    user = chat.user
+    if not user.email:
+        return
+    try:
+        if not is_new_conversation and rate_limited(f'chat-user-email:{chat.id}', limit=1, window_seconds=300):
+            return
+        send_user_support_reply_email(
+            user_email=user.email,
+            user_name=user.legal_first_name or user.username,
+            message_preview=text,
+            chat_url=request.build_absolute_uri(reverse('dashboard')),
+            is_new_conversation=is_new_conversation,
+            logo_url=request.build_absolute_uri(static('platform_app/img/logo-512.png')),
+        )
+    except Exception:
+        logger.exception('Support reply email failed for chat %s', chat.pk)
+
+
+def _reply_target(chat):
+    """The chat a reply must land in so the customer's widget (which only shows their
+    ACTIVE chat) actually displays it. Reopens the chat if the customer has no active one."""
+    if chat.status == 'ACTIVE':
+        return chat
+    active = SupportChat.objects.filter(user=chat.user, status='ACTIVE').first()
+    if active:
+        return active
+    chat.status = 'ACTIVE'
+    chat.closed_at = None
+    chat.save()
+    return chat
+
+
+def _post_support_message(request, chat, text, is_new_conversation=False):
+    msg = SupportMessage.objects.create(
+        chat=chat, sender_type='SUPPORT', sender_name=_admin_display_name(request.user),
+        message=text, is_read=False,
+    )
+    chat.messages.filter(sender_type='USER', is_read=False).update(is_read=True)
+    chat.save()  # bumps updated_at
+    _email_customer_about_reply(request, chat, text, is_new_conversation=is_new_conversation)
+    return msg
+
+
+@user_passes_test(is_admin)
+def admin_support_chats(request):
+    """Inbox: every conversation on the left, the open one on the right."""
+    return render(request, 'custom_admin/support_chats.html', {
+        'selected_chat_id': None,
+        'initial_chats': _chat_rows(),
+    })
 
 
 @user_passes_test(is_admin)
 def admin_chat_detail(request, chat_id):
-    """View and reply to support chat"""
+    """Same inbox, opened on one conversation (this is the link inside notification emails)."""
     chat = get_object_or_404(SupportChat, id=chat_id)
-    
-    if request.method == 'POST':
-        message = request.POST.get('message')
-        
-        if message:
-            SupportMessage.objects.create(
-                chat=chat,
-                sender_type='SUPPORT',
-                sender_name=f'{request.user.first_name} {request.user.last_name}' if request.user.first_name else request.user.username,
-                message=message,
-                is_read=False
-            )
-            
-            # Mark user messages as read
-            chat.messages.filter(sender_type='USER', is_read=False).update(is_read=True)
-            
-            messages.success(request, 'Reply sent successfully')
-            return redirect('admin_chat_detail', chat_id=chat_id)
-    
-    messages_list = chat.messages.all().order_by('created_at')
-    
-    context = {
-        'chat': chat,
-        'messages_list': messages_list,
-    }
-    
-    return render(request, 'custom_admin/chat_detail.html', context)
+    return render(request, 'custom_admin/support_chats.html', {
+        'selected_chat_id': chat.id,
+        'initial_chats': _chat_rows(),
+    })
+
+
+@user_passes_test(is_admin)
+def admin_support_list_json(request):
+    return JsonResponse({'chats': _chat_rows(request.GET.get('status', 'all'))})
+
+
+@user_passes_test(is_admin)
+def admin_support_messages_json(request, chat_id):
+    """Messages of one conversation. `after` returns only newer ones (for live polling)."""
+    chat = get_object_or_404(SupportChat.objects.select_related('user'), id=chat_id)
+    try:
+        after = int(request.GET.get('after', 0))
+    except ValueError:
+        after = 0
+    # Opening / watching a thread marks the customer's messages as read.
+    chat.messages.filter(sender_type='USER', is_read=False).update(is_read=True)
+    msgs = chat.messages.filter(id__gt=after).order_by('created_at', 'id')
+    return JsonResponse({
+        'chat': {
+            'id': chat.id, 'status': chat.status, 'username': chat.user.username, 'email': chat.user.email,
+            'name': f'{chat.user.legal_first_name} {chat.user.legal_last_name}'.strip() or chat.user.username,
+            'user_url': reverse('admin_user_detail', args=[chat.user_id]),
+        },
+        'messages': [_message_json(m) for m in msgs],
+    })
+
+
+@user_passes_test(is_admin)
+def admin_support_send(request, chat_id):
+    """Send a reply (JSON). Emails the customer."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    try:
+        text = (json.loads(request.body or b'{}').get('message') or '').strip()
+    except (ValueError, AttributeError):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+    if not text:
+        return JsonResponse({'error': 'Message cannot be empty'}, status=400)
+    if len(text) > MAX_CHAT_MESSAGE_LENGTH:
+        return JsonResponse({'error': f'Message is too long (max {MAX_CHAT_MESSAGE_LENGTH} characters).'}, status=400)
+
+    chat = get_object_or_404(SupportChat.objects.select_related('user'), id=chat_id)
+    chat = _reply_target(chat)
+    msg = _post_support_message(request, chat, text)
+    return JsonResponse({'success': True, 'chat_id': chat.id, 'message': _message_json(msg)})
+
+
+@user_passes_test(is_admin)
+def admin_support_new(request):
+    """Start a conversation with any user (JSON). Always emails them."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    try:
+        data = json.loads(request.body or b'{}')
+        user_id = int(data.get('user_id'))
+        text = (data.get('message') or '').strip()
+    except (ValueError, TypeError, AttributeError):
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+    if not text:
+        return JsonResponse({'error': 'Message cannot be empty'}, status=400)
+    if len(text) > MAX_CHAT_MESSAGE_LENGTH:
+        return JsonResponse({'error': f'Message is too long (max {MAX_CHAT_MESSAGE_LENGTH} characters).'}, status=400)
+
+    target = get_object_or_404(User, id=user_id)
+    chat = SupportChat.objects.filter(user=target, status='ACTIVE').first()
+    created = chat is None
+    if created:
+        chat = SupportChat.objects.create(user=target, status='ACTIVE')
+    chat.user = target
+    msg = _post_support_message(request, chat, text, is_new_conversation=True)
+    return JsonResponse({'success': True, 'chat_id': chat.id, 'message': _message_json(msg)})
+
+
+@user_passes_test(is_admin)
+def admin_support_users_json(request):
+    """User search for the "new message" box."""
+    q = request.GET.get('q', '').strip()
+    if len(q) < 2:
+        return JsonResponse({'users': []})
+    users = User.objects.filter(
+        Q(username__icontains=q) | Q(email__icontains=q) |
+        Q(legal_first_name__icontains=q) | Q(legal_last_name__icontains=q)
+    ).order_by('username')[:8]
+    return JsonResponse({'users': [{
+        'id': u.id, 'username': u.username, 'email': u.email,
+        'name': f'{u.legal_first_name} {u.legal_last_name}'.strip() or u.username,
+    } for u in users]})
 
 
 @user_passes_test(is_admin)
@@ -1393,18 +1542,27 @@ def admin_trade_history_delete(request, entry_id):
 @user_passes_test(is_admin)
 def admin_chat_close(request, chat_id):
     """Toggle a support chat between ACTIVE and CLOSED."""
-    if request.method == 'POST':
-        chat = get_object_or_404(SupportChat, id=chat_id)
-        if chat.status == 'ACTIVE':
-            chat.status = 'CLOSED'
-            chat.closed_at = timezone.now()
-        else:
-            chat.status = 'ACTIVE'
-            chat.closed_at = None
-        chat.save()
-        messages.success(request, f'Chat #{chat.id} marked as {chat.status.title()}.')
-        return redirect('admin_chat_detail', chat_id=chat_id)
-    return redirect('admin_support_chats')
+    if request.method != 'POST':
+        return redirect('admin_support_chats')
+    wants_json = request.headers.get('x-requested-with') == 'fetch'
+    chat = get_object_or_404(SupportChat, id=chat_id)
+    if chat.status == 'ACTIVE':
+        chat.status = 'CLOSED'
+        chat.closed_at = timezone.now()
+    else:
+        if SupportChat.objects.filter(user=chat.user, status='ACTIVE').exclude(pk=chat.pk).exists():
+            msg = f'{chat.user.username} already has another active chat - close that one first.'
+            if wants_json:
+                return JsonResponse({'error': msg}, status=409)
+            messages.error(request, msg)
+            return redirect('admin_chat_detail', chat_id=chat_id)
+        chat.status = 'ACTIVE'
+        chat.closed_at = None
+    chat.save()
+    if wants_json:
+        return JsonResponse({'ok': True, 'status': chat.status})
+    messages.success(request, f'Chat #{chat.id} marked as {chat.status.title()}.')
+    return redirect('admin_chat_detail', chat_id=chat_id)
 
 
 @user_passes_test(is_admin)
@@ -1413,6 +1571,8 @@ def admin_chat_delete(request, chat_id):
     if request.method == 'POST':
         chat = get_object_or_404(SupportChat, id=chat_id)
         chat.delete()
+        if request.headers.get('x-requested-with') == 'fetch':
+            return JsonResponse({'ok': True})
         messages.success(request, f'Chat #{chat_id} deleted.')
     return redirect('admin_support_chats')
 

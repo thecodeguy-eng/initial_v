@@ -420,6 +420,43 @@ class ResendEmailService:
         """
         return self.send_email(user_email, user_name, subject, _email_shell(heading, body_html, logo_url))
 
+    def send_user_support_reply_email(self, *, user_email, user_name, message_preview, chat_url=None,
+                                      is_new_conversation=False, logo_url=None):
+        """Tell a customer that support wrote to them (reply or a message the admin started)."""
+        b = BRAND
+        chat_url = chat_url or "https://mirrormarkettrading.com/dashboard/"
+        if is_new_conversation:
+            subject = "New message from Mirrormarkettrading support"
+            heading = "You have a new message"
+            intro = "Our support team has sent you a message."
+        else:
+            subject = "Support replied to you - Mirrormarkettrading"
+            heading = "Support replied to your message"
+            intro = "Our support team has replied to your conversation."
+
+        preview = message_preview if len(message_preview) <= 400 else message_preview[:397] + '...'
+        body_html = f"""
+            <h2 style="color:{b['text_main']}; margin:0 0 14px 0; font-size:22px; text-align:center;">{heading}</h2>
+            <p style="color:{b['text_muted']}; font-size:15px; line-height:1.6; margin:0 0 22px 0; text-align:center;">
+                Hello <strong style="color:{b['text_main']};">{escape(user_name)}</strong>,<br>{intro}
+            </p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:6px;">
+                <tr>
+                    <td bgcolor="{b['card_alt']}" style="border-radius:10px; padding:16px 18px; border-left:3px solid {b['accent']};">
+                        <p style="color:{b['text_muted']}; margin:0 0 6px 0; font-size:12px; text-transform:uppercase; letter-spacing:.05em;">Support Team</p>
+                        <p style="color:{b['text_main']}; margin:0; font-size:15px; line-height:1.55; white-space:pre-line;">{escape(preview)}</p>
+                    </td>
+                </tr>
+            </table>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr><td align="center">{_button("Open the conversation", chat_url, b)}</td></tr>
+            </table>
+            <p style="color:{b['text_faint']}; font-size:12px; line-height:1.5; margin:18px 0 0 0; text-align:center;">
+                Log in and open the Support chat to reply. Please don't reply to this email.
+            </p>
+        """
+        return self.send_email(user_email, user_name, subject, _email_shell(heading, body_html, logo_url))
+
     # ------------------------------------------------------------------
     # Payment / approval notices
     # ------------------------------------------------------------------
@@ -581,3 +618,8 @@ def send_admin_withdrawal_access_email(**kwargs):
 def send_user_transaction_approved_email(**kwargs):
     """Convenience function: tell the customer their deposit/withdrawal/bot purchase was approved."""
     return ResendEmailService().send_user_transaction_approved_email(**kwargs)
+
+
+def send_user_support_reply_email(**kwargs):
+    """Convenience function: tell a customer that support replied / messaged them."""
+    return ResendEmailService().send_user_support_reply_email(**kwargs)

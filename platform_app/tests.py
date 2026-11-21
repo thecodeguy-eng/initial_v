@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from .models import (
     User, PasswordResetCode, Transaction, CopyTrader, CopyTraderPlan,
-    CopyTradingSubscription, PlatformSettings,
+    CopyTradingSubscription, PlatformSettings, SupportChat, SupportMessage,
 )
 
 STRONG_PASSWORD = 'Sturdy-Pass-9431'
@@ -299,3 +299,136 @@ class ApprovalFlowTests(TestCase):
                 self.assertEqual(post.call_args.kwargs['json']['to'], ['payer@example.com'])
         subjects = [c.kwargs['json']['subject'] for c in post.call_args_list]
         self.assertTrue(any('deposit' in s for s in subjects) and any('withdrawal' in s for s in subjects) and any('bot' in s for s in subjects))
+
+
+class SupportInboxTests(TestCase):
+    """Admin inbox: reply to many customers, and each of them is emailed."""
+
+    def setUp(self):
+        self.admin = make_user('boss', 'boss@example.com', is_staff=True, is_superuser=True, first_name='Ada')
+        self.bob = make_user('bob', 'bob@example.com')
+        self.cat = make_user('cat', 'cat@example.com')
+        self.bob_chat = SupportChat.objects.create(user=self.bob)
+        self.cat_chat = SupportChat.objects.create(user=self.cat)
+        SupportMessage.objects.create(chat=self.bob_chat, sender_type='USER', sender_name='bob', message='Where is my deposit?')
+        SupportMessage.objects.create(chat=self.cat_chat, sender_type='USER', sender_name='cat', message='Hello')
+        SupportMessage.objects.create(chat=self.cat_chat, sender_type='USER', sender_name='cat', message='Anyone there?')
+        self.client.force_login(self.admin)
+        mail = patch('platform_app.admin_views.send_user_support_reply_email')
+        self.mail = mail.start()
+        self.addCleanup(mail.stop)
+        rl = patch('platform_app.admin_views.rate_limited', return_value=False)
+        self.rl = rl.start()
+        self.addCleanup(rl.stop)
+
+    def send(self, chat, text='On it!'):
+        return self.client.post(reverse('admin_support_send', args=[chat.id]), data=json.dumps({'message': text}),
+                                content_type='application/json')
+
+    def test_inbox_lists_every_conversation_with_unread_counts(self):
+        rows = {r['username']: r for r in self.client.get(reverse('admin_support_list_json')).json()['chats']}
+        self.assertEqual(rows['bob']['unread'], 1)
+        self.assertEqual(rows['cat']['unread'], 2)
+        self.assertEqual(rows['cat']['last_text'], 'Anyone there?')
+        unread = self.client.get(reverse('admin_support_list_json') + '?status=unread').json()['chats']
+        self.assertEqual(len(unread), 2)
+
+    def test_reply_is_saved_marks_read_and_emails_customer(self):
+        res = self.send(self.bob_chat, 'Checking your payment now')
+        self.assertEqual(res.status_code, 200)
+        msg = SupportMessage.objects.filter(chat=self.bob_chat, sender_type='SUPPORT').get()
+        self.assertEqual(msg.message, 'Checking your payment now')
+        self.assertFalse(self.bob_chat.messages.filter(sender_type='USER', is_read=False).exists())
+        self.assertEqual(self.mail.call_count, 1)
+        kw = self.mail.call_args.kwargs
+        self.assertEqual(kw['user_email'], 'bob@example.com')
+        self.assertFalse(kw['is_new_conversation'])
+        self.assertIn('Checking your payment', kw['message_preview'])
+
+    def test_each_customer_gets_their_own_email(self):
+        self.send(self.bob_chat, 'hi bob')
+        self.send(self.cat_chat, 'hi cat')
+        self.assertEqual([c.kwargs['user_email'] for c in self.mail.call_args_list], ['bob@example.com', 'cat@example.com'])
+
+    def test_burst_of_replies_only_emails_once(self):
+        self.rl.side_effect = [False, True]
+        self.send(self.bob_chat, 'one')
+        self.send(self.bob_chat, 'two')
+        self.assertEqual(self.mail.call_count, 1)
+        self.assertEqual(SupportMessage.objects.filter(chat=self.bob_chat, sender_type='SUPPORT').count(), 2)
+
+    def test_email_failure_does_not_lose_the_reply(self):
+        self.mail.side_effect = RuntimeError('resend down')
+        res = self.send(self.bob_chat)
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(SupportMessage.objects.filter(chat=self.bob_chat, sender_type='SUPPORT').exists())
+
+    def test_reply_to_closed_chat_reaches_the_customers_active_chat(self):
+        self.bob_chat.status = 'CLOSED'
+        self.bob_chat.save()
+        active = SupportChat.objects.create(user=self.bob)
+        res = self.send(self.bob_chat, 'late reply').json()
+        self.assertEqual(res['chat_id'], active.id)
+        self.assertTrue(active.messages.filter(message='late reply').exists())
+
+    def test_reply_to_closed_chat_reopens_it_when_no_other_active_chat(self):
+        self.bob_chat.status = 'CLOSED'
+        self.bob_chat.save()
+        self.send(self.bob_chat, 'back again')
+        self.bob_chat.refresh_from_db()
+        self.assertEqual(self.bob_chat.status, 'ACTIVE')
+
+    def test_cannot_reopen_a_chat_when_customer_already_has_an_active_one(self):
+        self.bob_chat.status = 'CLOSED'
+        self.bob_chat.save()
+        SupportChat.objects.create(user=self.bob)
+        res = self.client.post(reverse('admin_chat_close', args=[self.bob_chat.id]), HTTP_X_REQUESTED_WITH='fetch')
+        self.assertEqual(res.status_code, 409)
+        self.assertEqual(SupportChat.objects.filter(user=self.bob, status='ACTIVE').count(), 1)
+
+    def test_admin_can_start_a_new_conversation_and_customer_is_emailed(self):
+        dan = make_user('dan', 'dan@example.com')
+        res = self.client.post(reverse('admin_support_new'), data=json.dumps({'user_id': dan.id, 'message': 'Welcome aboard!'}),
+                               content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        chat = SupportChat.objects.get(user=dan, status='ACTIVE')
+        self.assertTrue(chat.messages.filter(sender_type='SUPPORT', message='Welcome aboard!').exists())
+        self.assertTrue(self.mail.call_args.kwargs['is_new_conversation'])
+        self.client.post(reverse('admin_support_new'), data=json.dumps({'user_id': dan.id, 'message': 'Another'}),
+                         content_type='application/json')
+        self.assertEqual(SupportChat.objects.filter(user=dan, status='ACTIVE').count(), 1)
+
+    def test_empty_and_oversized_messages_are_rejected(self):
+        self.assertEqual(self.send(self.bob_chat, '   ').status_code, 400)
+        self.assertEqual(self.send(self.bob_chat, 'x' * 2001).status_code, 400)
+        self.mail.assert_not_called()
+
+    def test_live_polling_returns_only_new_messages(self):
+        first = self.client.get(reverse('admin_support_messages_json', args=[self.cat_chat.id])).json()
+        self.assertEqual(len(first['messages']), 2)
+        last = first['messages'][-1]['id']
+        newer = self.client.get(reverse('admin_support_messages_json', args=[self.cat_chat.id]) + f'?after={last}').json()
+        self.assertEqual(newer['messages'], [])
+        self.assertFalse(self.cat_chat.messages.filter(sender_type='USER', is_read=False).exists())
+
+    def test_customers_and_anonymous_cannot_use_the_admin_inbox(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse('admin_support_chats')).status_code, 302)
+        self.client.force_login(self.bob)
+        for url in (reverse('admin_support_chats'), reverse('admin_support_list_json')):
+            self.assertEqual(self.client.get(url).status_code, 302)
+        self.assertEqual(self.send(self.cat_chat).status_code, 302)
+        self.assertFalse(SupportMessage.objects.filter(sender_type='SUPPORT').exists())
+
+    def test_user_unread_badge_counts_support_messages(self):
+        self.send(self.bob_chat, 'ping')
+        self.client.force_login(self.bob)
+        self.assertEqual(self.client.get(reverse('support_unread_count')).json()['unread'], 1)
+        self.client.get(reverse('get_chat_messages'))
+        self.assertEqual(self.client.get(reverse('support_unread_count')).json()['unread'], 0)
+
+    def test_inbox_page_and_email_deep_link_render(self):
+        self.assertEqual(self.client.get(reverse('admin_support_chats')).status_code, 200)
+        res = self.client.get(reverse('admin_chat_detail', args=[self.bob_chat.id]))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'id="ibThread"')

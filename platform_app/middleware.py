@@ -18,8 +18,15 @@ class UserActivityMiddleware(MiddlewareMixin):
             '/static/', '/media/', '/favicon.ico', 
             '/custom-admin/activities/',  # Don't track activities page itself
             '/api/',  # Skip API calls
+            '/chat/',  # live chat polling (every few seconds) is not a page visit
+            '/custom-admin/support/api/',  # inbox live updates
+
         ]
         
+        # Inbox thread polling: /custom-admin/support/<id>/messages/
+        if request.path.startswith('/custom-admin/support/') and request.path.endswith('/messages/'):
+            return response
+
         # Skip if any excluded path matches
         if any(request.path.startswith(path) for path in excluded_paths):
             return response

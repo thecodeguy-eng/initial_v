@@ -57,6 +57,7 @@ urlpatterns = [
     path('chat/send-message/', views.send_support_message, name='send_support_message'),
     path('chat/get-messages/', views.get_chat_messages, name='get_chat_messages'),
     path('chat/clear/', views.clear_support_chat, name='clear_support_chat'),
+    path('chat/unread/', views.support_unread_count, name='support_unread_count'),
 
     # Products
     path('products/stocks/', views.stocks, name='stocks'),
@@ -129,6 +130,11 @@ urlpatterns = [
 
     # Support Chats
     path('custom-admin/support/', admin_views.admin_support_chats, name='admin_support_chats'),
+    path('custom-admin/support/api/chats/', admin_views.admin_support_list_json, name='admin_support_list_json'),
+    path('custom-admin/support/api/users/', admin_views.admin_support_users_json, name='admin_support_users_json'),
+    path('custom-admin/support/api/new/', admin_views.admin_support_new, name='admin_support_new'),
+    path('custom-admin/support/<int:chat_id>/messages/', admin_views.admin_support_messages_json, name='admin_support_messages_json'),
+    path('custom-admin/support/<int:chat_id>/send/', admin_views.admin_support_send, name='admin_support_send'),
     path('custom-admin/support/<int:chat_id>/', admin_views.admin_chat_detail, name='admin_chat_detail'),
     path('custom-admin/support/<int:chat_id>/close/', admin_views.admin_chat_close, name='admin_chat_close'),
     path('custom-admin/support/<int:chat_id>/delete/', admin_views.admin_chat_delete, name='admin_chat_delete'),

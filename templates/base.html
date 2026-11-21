@@ -269,7 +269,7 @@
 
     <!-- Chat (authenticated only) -->
     {% if user.is_authenticated %}
-    <div id="chat-fab" onclick="toggleChat()" title="Support Chat"><i class="fas fa-comment-dots"></i> Support</div>
+    <div id="chat-fab" onclick="toggleChat()" title="Support Chat"><i class="fas fa-comment-dots"></i> Support<span id="chat-fab-badge" class="fab-badge" hidden></span></div>
     <div id="chat-window">
         <div class="chat-header">
             <div>
@@ -386,7 +386,7 @@
         chatOpen = !chatOpen;
         const win = document.getElementById('chat-window');
         const fab = document.getElementById('chat-fab');
-        if (chatOpen) { win.classList.add('active'); fab.style.display = 'none'; loadChat(); startPolling(); }
+        if (chatOpen) { win.classList.add('active'); fab.style.display = 'none'; document.getElementById('chat-fab-badge').hidden = true; loadChat(); startPolling(); }
         else          { win.classList.remove('active'); fab.style.display = 'flex'; stopPolling(); }
     }
     function closeChat() {
@@ -459,6 +459,20 @@
             if (d.messages) displayMessages(d.messages);
         } catch(e) {}
     }
+    /* badge on the bubble when support has written and the chat is closed */
+    async function checkUnread() {
+        if (chatOpen) return;
+        try {
+            const r = await fetch('{% url "support_unread_count" %}');
+            const d = await r.json();
+            const b = document.getElementById('chat-fab-badge');
+            if (!b) return;
+            b.textContent = d.unread > 9 ? '9+' : d.unread;
+            b.hidden = !(d.unread > 0);
+        } catch (e) {}
+    }
+    checkUnread();
+    setInterval(function () { if (!document.hidden) checkUnread(); }, 30000);
     function startPolling() { messageInterval = setInterval(function(){ if(chatOpen) loadChatMessages(); }, 5000); }
     function stopPolling()  { if(messageInterval){ clearInterval(messageInterval); messageInterval=null; } }
     function scrollToBottom() { const b=document.getElementById('chat-body'); setTimeout(()=>{ b.scrollTop=b.scrollHeight; },80); }

@@ -499,3 +499,8 @@ input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus
 .sidebar-deposit-btn { background: var(--pop); color: var(--on-pop); border-color: var(--text-main); }
 .sidebar-deposit-btn:hover { background: var(--pop-hover); }
 .lang-option.active { background: var(--pop); color: var(--on-pop); }
+
+.fab-badge { position: absolute; top: -6px; right: -4px; min-width: 20px; height: 20px; padding: 0 .35rem; border-radius: 999px; background: var(--neg); color: #fff;
+    border: 2px solid var(--bg); font-family: var(--font-mono); font-size: .68rem; font-weight: 600; display: grid; place-items: center; }
+.fab-badge[hidden] { display: none; }
+#chat-fab { position: fixed; }

@@ -57,6 +57,7 @@ TEMPLATES = [
                 'django.template.context_processors.media',
                 'django.template.context_processors.static',
                 'platform_app.context_processors.platform_settings',
+                'platform_app.context_processors.admin_support_badge',
             ],
         },
     },

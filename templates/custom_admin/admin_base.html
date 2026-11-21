@@ -52,6 +52,7 @@
         .nav-link.ad-link.active { background: var(--pop); color: var(--on-pop); font-weight: 600; box-shadow: inset 3px 0 0 var(--text-main); }
         .nav-link.ad-link.active i { color: var(--on-pop); }
         .nav-link.ad-link.danger:hover { color: var(--neg); }
+        .ad-badge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 .35rem; border-radius: 999px; background: var(--pop); color: var(--on-pop); border: 1px solid var(--text-main); font-family: var(--font-mono); font-size: .68rem; font-weight: 600; display: grid; place-items: center; }
 
         .ad-me { margin-top: auto; padding: .9rem 1.1rem; border-top: 1px solid var(--border); display: flex; align-items: center; gap: .7rem; }
         .ad-av { width: 32px; height: 32px; border-radius: 50%; background: var(--text-main); color: var(--bg); display: grid; place-items: center; font-weight: 600; font-size: .75rem; font-family: var(--font-display); flex-shrink: 0; }
@@ -123,7 +124,7 @@
                 <a href="{% url 'admin_investment_plans_list' %}" class="nav-link ad-link {% if 'investment-plans' in request.path %}active{% endif %}"><i class="fas fa-chart-pie"></i>Investment plans</a>
 
                 <div class="ad-group-label">Support &amp; system</div>
-                <a href="{% url 'admin_support_chats' %}" class="nav-link ad-link {% if 'support' in request.path %}active{% endif %}"><i class="fas fa-comments"></i>Support chats</a>
+                <a href="{% url 'admin_support_chats' %}" class="nav-link ad-link {% if 'support' in request.path %}active{% endif %}"><i class="fas fa-comments"></i>Support inbox{% if admin_unread_chats %}<span class="ad-badge">{{ admin_unread_chats }}</span>{% endif %}</a>
                 <a href="{% url 'admin_admins_list' %}" class="nav-link ad-link {% if 'admins' in request.path %}active{% endif %}"><i class="fas fa-user-shield"></i>Admins</a>
                 <a href="{% url 'admin_settings' %}" class="nav-link ad-link {% if 'settings' in request.path %}active{% endif %}"><i class="fas fa-cog"></i>Settings</a>
                 <a href="{% url 'admin_system_logs' %}" class="nav-link ad-link {% if 'logs' in request.path %}active{% endif %}"><i class="fas fa-file-alt"></i>System logs</a>

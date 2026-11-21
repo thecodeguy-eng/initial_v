@@ -1363,6 +1363,15 @@ def get_chat_messages(request):
 
 
 @login_required
+def support_unread_count(request):
+    """How many support messages the customer hasn't seen yet (drives the chat bubble badge)."""
+    count = SupportMessage.objects.filter(
+        chat__user=request.user, chat__status='ACTIVE', sender_type='SUPPORT', is_read=False,
+    ).count()
+    return JsonResponse({'unread': count})
+
+
+@login_required
 def clear_support_chat(request):
     """User closes current chat - admin can still see closed chats"""
     if request.method == 'POST':
