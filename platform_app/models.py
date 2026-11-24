@@ -40,6 +40,11 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.legal_first_name} {self.legal_last_name}"
 
+    @property
+    def display_id(self):
+        """Customer-facing account ID."""
+        return f"TAY{self.id}"
+
 
 class WalletAddress(models.Model):
     """Company wallet addresses for different cryptocurrencies"""

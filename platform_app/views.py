@@ -15,6 +15,8 @@ from django.core.validators import validate_email
 from decimal import Decimal, InvalidOperation
 import json
 import re
+import time
+from django.core import signing
 import requests
 from datetime import datetime, timedelta
 import logging
@@ -361,6 +363,20 @@ def home(request):
 
 # Authentication views
 
+REGISTER_TOKEN_SALT = 'register-form'
+# Throwaway-mail domains seen in the Nov 2026 bot attack (wallet123@, payments456@, admin789@ ...)
+BLOCKED_EMAIL_DOMAINS = {'euploading.com', 'maildrop.cc', 'riskdotmp3.me'}
+
+
+def _valid_form_token(token):
+    """Signed render-time of the sign-up form: must be 3 seconds to 2 hours old."""
+    try:
+        issued = signing.loads(token, salt=REGISTER_TOKEN_SALT, max_age=7200)
+    except signing.BadSignature:
+        return False
+    return time.time() - issued >= 3
+
+
 def register(request):
     """User registration with welcome email"""
     if request.method == 'POST':
@@ -375,6 +391,22 @@ def register(request):
         # Stops scripted mass sign-ups (which also flood the admin inbox)
         if rate_limited(f'register:{ip_address}', limit=5, window_seconds=3600):
             messages.error(request, 'Too many sign-up attempts. Please try again later.')
+            return redirect('register')
+
+        # Bots that POST straight at the endpoint never loaded the form, so they
+        # have no valid token, or they fill the hidden honeypot field. Both are
+        # dropped silently so the bot learns nothing.
+        if request.POST.get('company_website') or not _valid_form_token(request.POST.get('form_token', '')):
+            logger.warning(f'Blocked bot sign-up from {ip_address}')
+            return redirect('register')
+
+        if email.lower().rsplit('@', 1)[-1] in BLOCKED_EMAIL_DOMAINS:
+            logger.warning(f'Blocked throwaway-domain sign-up from {ip_address}')
+            return redirect('register')
+
+        # Ceiling for the whole site, so a botnet with many IPs still can't flood us
+        if rate_limited('register:global', limit=60, window_seconds=3600):
+            messages.error(request, 'Sign-ups are busy right now. Please try again in a little while.')
             return redirect('register')
 
         # Usernames show up across the admin pages and emails, so keep them to
@@ -482,7 +514,7 @@ def register(request):
         messages.success(request, 'Account created successfully! Welcome to Mirrormarkettrading Global.')
         return redirect('onboarding')
     
-    return render(request, 'register.html')
+    return render(request, 'register.html', {'form_token': signing.dumps(int(time.time()), salt=REGISTER_TOKEN_SALT)})
 
 def user_login(request):
     """User login"""
@@ -790,6 +822,11 @@ def copy_trader_detail(request, trader_id):
     settings = PlatformSettings.objects.first()
     auto_invest = settings.copy_trade_auto_invest if settings else True
     plans = trader.plans.filter(is_active=True).order_by('price')
+
+    # Locked until the first deposit: the page itself must not open, not just its buttons.
+    if request.method == 'GET' and not _has_deposited(request.user):
+        messages.warning(request, 'Copy trading is locked. Make your first deposit to unlock it.')
+        return redirect('copy_trading')
 
     # Copy trading can only use money the user has actually deposited - not
     # profit/bonus sitting in their balance - so a $200 deposit that grew to

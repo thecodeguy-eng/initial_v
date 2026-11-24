@@ -145,9 +145,9 @@
                         <i class="fas fa-check-circle" style="color:var(--pos);"></i> Already copied
                     </span>
                     {% elif not has_deposited %}
-                    <a href="{% url 'copy_trader_detail' trader.id %}" class="btn-outline w-full py-2.5 text-sm font-semibold text-center">
-                        <i class="fas fa-lock" style="color:var(--warn);"></i> View plans &middot; locked
-                    </a>
+                    <span class="btn-outline w-full py-2.5 text-sm font-semibold text-center" style="cursor:not-allowed;opacity:.7;">
+                        <i class="fas fa-lock" style="color:var(--warn);"></i> Locked &middot; deposit to unlock
+                    </span>
                     {% else %}
                     <a href="{% url 'copy_trader_detail' trader.id %}"
                         class="btn-primary w-full py-2.5 text-sm font-semibold text-center block">

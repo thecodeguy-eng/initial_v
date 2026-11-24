@@ -2,8 +2,13 @@ import json
 from decimal import Decimal
 from unittest.mock import patch
 
+import time
+
+from django.core import signing
 from django.test import TestCase
 from django.urls import reverse
+
+from .views import REGISTER_TOKEN_SALT
 
 from .models import (
     User, PasswordResetCode, Transaction, CopyTrader, CopyTraderPlan,
@@ -30,8 +35,31 @@ class RegistrationSecurityTests(TestCase):
             'username': 'newuser', 'email': 'new@example.com', 'password': STRONG_PASSWORD,
             'legal_first_name': 'New', 'legal_last_name': 'User', 'preferred_currency': 'USD',
         }
+        if 'form_token' not in overrides:
+            data['form_token'] = signing.dumps(int(time.time()) - 10, salt=REGISTER_TOKEN_SALT)
         data.update(overrides)
         return self.client.post(reverse('register'), data, REMOTE_ADDR='10.0.0.1')
+
+    def test_bot_without_form_token_is_dropped(self, *mocks):
+        self.post_register(form_token='')
+        self.assertFalse(User.objects.exists())
+
+    def test_honeypot_fill_is_dropped(self, *mocks):
+        self.post_register(company_website='http://spam.example')
+        self.assertFalse(User.objects.exists())
+
+    def test_instant_submit_is_dropped(self, *mocks):
+        self.post_register(form_token=signing.dumps(int(time.time()), salt=REGISTER_TOKEN_SALT))
+        self.assertFalse(User.objects.exists())
+
+    def test_spoofed_forwarded_for_cannot_dodge_rate_limit(self, *mocks):
+        for i in range(7):
+            self.client.post(reverse('register'), {
+                'username': f'spoof{i}', 'email': f'spoof{i}@example.com', 'password': STRONG_PASSWORD,
+                'legal_first_name': 'A', 'legal_last_name': 'B', 'preferred_currency': 'USD',
+                'form_token': signing.dumps(int(time.time()) - 10, salt=REGISTER_TOKEN_SALT),
+            }, REMOTE_ADDR='10.0.0.1', HTTP_X_VERCEL_FORWARDED_FOR='9.9.9.9', HTTP_X_FORWARDED_FOR=f'1.2.3.{i}')
+        self.assertEqual(User.objects.count(), 5)
 
     def test_valid_registration_succeeds(self, *mocks):
         self.post_register()
@@ -477,7 +505,12 @@ class CopyTradingRulesTests(TestCase):
 
         page = self.client.get(reverse('copy_trading')).content.decode()
         self.assertIn('Copy trading is locked', page)
-        self.assertIn('Deposit to unlock', self.client.get(self.url).content.decode())
+        self.assertNotIn(self.url, page)  # no link into the trader page while locked
+        self.assertRedirects(self.client.get(self.url), reverse('copy_trading'))
+
+    def test_display_id_is_prefixed(self):
+        user = make_user()
+        self.assertEqual(user.display_id, f'TAY{user.id}')
 
     def test_deposited_user_can_copy_once_only(self):
         user = make_user(account_balance=Decimal('300'), total_deposit=Decimal('300'))

@@ -51,7 +51,13 @@ def get_country_from_ip(ip_address):
 
 def get_client_ip(request):
     """Same precedence used by UserActivityMiddleware, kept here to avoid duplication."""
+    # On Vercel the edge sets this header itself, so a client cannot spoof it.
+    # X-Forwarded-For is client-controllable (a bot can rotate fake values to
+    # dodge every per-IP rate limit), so it is only a last resort.
+    vercel_ip = request.META.get('HTTP_X_VERCEL_FORWARDED_FOR')
+    if vercel_ip:
+        return vercel_ip.split(',')[0].strip()
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
-        return x_forwarded_for.split(',')[0].strip()
+        return x_forwarded_for.split(',')[-1].strip()
     return request.META.get('REMOTE_ADDR', '')

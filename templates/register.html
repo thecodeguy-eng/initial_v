@@ -42,6 +42,8 @@
 
             <form method="post" class="space-y-4" id="registerForm">
                 {% csrf_token %}
+                <input type="hidden" name="form_token" value="{{ form_token }}">
+                <div style="position:absolute;left:-9999px;" aria-hidden="true"><label>Leave this empty<input type="text" name="company_website" tabindex="-1" autocomplete="off"></label></div>
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="auth-label">First name</label><input type="text" name="legal_first_name" required class="auth-input" style="padding-left:1rem;" placeholder="John"></div>
                     <div><label class="auth-label">Last name</label><input type="text" name="legal_last_name" required class="auth-input" style="padding-left:1rem;" placeholder="Doe"></div>
