@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db import transaction as db_transaction
-from django.db.models import Sum, Count, Q, Avg, OuterRef, Subquery
+from django.db.models import Sum, Count, Q, Avg, OuterRef, Subquery, Exists
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
@@ -970,10 +970,21 @@ def _admin_display_name(user):
     return full or user.username
 
 
+# Greetings the system posts by itself - a chat holding only these is not a real conversation.
+AUTO_SENDER_NAMES = ('Support Bot', 'Support Team')
+
+
 def _chat_rows(status='all', limit=200):
-    """Conversation list for the inbox (newest activity first)."""
-    last = SupportMessage.objects.filter(chat=OuterRef('pk')).order_by('-created_at')
-    chats = SupportChat.objects.select_related('user').annotate(
+    """Conversation list for the inbox (newest activity first).
+
+    Only real conversations are listed: the customer wrote something, or a person on the
+    team did. Customers who merely opened the chat bubble (or only got the automatic
+    greeting) stay out of the list - use "New message" to start a chat with them.
+    """
+    last = SupportMessage.objects.filter(chat=OuterRef('pk')).order_by('-created_at', '-id')
+    real = SupportMessage.objects.filter(chat=OuterRef('pk')).filter(
+        Q(sender_type='USER') | (Q(sender_type='SUPPORT') & ~Q(sender_name__in=AUTO_SENDER_NAMES)))
+    chats = SupportChat.objects.select_related('user').filter(Exists(real)).annotate(
         unread_count=Count('messages', filter=Q(messages__is_read=False, messages__sender_type='USER')),
         last_text=Subquery(last.values('message')[:1]),
         last_sender=Subquery(last.values('sender_type')[:1]),

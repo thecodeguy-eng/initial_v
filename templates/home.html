@@ -1,38 +1,99 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Mirrormarkettrading - Trade the Future{% endblock %}
 
 {% block extra_css %}
 <style>
-/* ── Home (MONO) ───────────────────────────────────────────────────────── */
-.h-hero { position: relative; border-bottom: 1px solid var(--border); overflow: hidden; }
-.h-hero::before { /* faint engineering grid */
-    content: ''; position: absolute; inset: 0; pointer-events: none;
-    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 64px 64px; opacity: .45;
-    -webkit-mask-image: radial-gradient(ellipse 70% 80% at 70% 30%, #000 0%, transparent 75%);
-            mask-image: radial-gradient(ellipse 70% 80% at 70% 30%, #000 0%, transparent 75%);
+/* ── Home (BLOCKSY) ────────────────────────────────────────────────────── */
+.bx-hero { position: relative; border-bottom: 1px solid var(--border); padding: 1rem 0 0; overflow-x: clip; max-width: 100vw; }
+.bx-card {
+    /* the hero panel is always dark, in either theme */
+    --text-main:#eaf6f7; --text-muted:#8fa8ad; --text-light:#5f7a80; --bg-card:#0a171d; --border:rgba(94,234,235,.12); --border-strong:rgba(94,234,235,.3);
+    --pos:#3eeaa4; --neg:#ff7272; --pop:#2de2e6; --on-pop:#021014;
+    position: relative; overflow: hidden; color: var(--text-main); background: #02070a; isolation: isolate;
+    margin: 0 auto; max-width: 1360px; width: calc(100% - 1.5rem); border-radius: 28px; border: 1px solid rgba(94,234,235,.14);
+    padding: clamp(3rem, 7vw, 5.5rem) clamp(1.25rem, 5vw, 6rem) 0; box-sizing: border-box; min-width: 0;
 }
-.h-hero-grid { position: relative; display: grid; gap: 3rem; padding: 4.5rem 0 4rem; align-items: end; }
-@media (min-width: 1024px) { .h-hero-grid { grid-template-columns: 1.35fr .85fr; padding: 6.5rem 0 5.5rem; gap: 4rem; } }
-.h-title { font-family: var(--font-display); font-weight: 600; letter-spacing: -.055em; line-height: .94; font-size: clamp(2.9rem, 8.2vw, 6.6rem); margin: 1.25rem 0 1.75rem; }
-.h-title em { font-style: normal; color: transparent; -webkit-text-stroke: 1.5px var(--text-main); }
-.h-lead { color: var(--text-muted); font-size: 1.08rem; line-height: 1.65; max-width: 34rem; margin-bottom: 2.25rem; }
+.bx-card::before { /* teal wash from the floor */
+    content: ''; position: absolute; inset: 0; z-index: -3;
+    background: radial-gradient(60% 55% at 70% 78%, rgba(45,226,230,.34), transparent 70%), radial-gradient(90% 40% at 50% 100%, rgba(45,226,230,.28), transparent 75%);
+}
+.bx-beam { position: absolute; z-index: -2; left: 70%; top: 0; width: min(30vw, 340px); height: 100%; transform: translateX(-50%);
+    background:
+        linear-gradient(180deg, transparent 0%, rgba(120,245,250,.18) 35%, rgba(170,252,254,.75) 80%, #f2ffff 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent); mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
+    filter: blur(18px); opacity: .95; animation: bxPulse 5s ease-in-out infinite; }
+.bx-beam::after { content: ''; position: absolute; left: 50%; bottom: 0; width: 46%; height: 80%; transform: translateX(-50%);
+    background: linear-gradient(180deg, transparent, rgba(255,255,255,.85)); filter: blur(10px); }
+.bx-helix { position: absolute; z-index: -1; left: 70%; top: 6%; width: min(24vw, 280px); height: 72%; transform: translateX(-50%); filter: drop-shadow(0 0 10px rgba(45,226,230,.9)); }
+.bx-sparks { position: absolute; z-index: -1; left: 58%; top: 25%; width: 26%; height: 55%;
+    background-image: radial-gradient(circle, rgba(200,255,255,.95) 0 1px, transparent 1.5px); background-size: 34px 29px; opacity: .45;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 100%, #000, transparent 70%); mask-image: radial-gradient(ellipse at 50% 100%, #000, transparent 70%); }
+@keyframes bxPulse { 50% { opacity: .65; } }
+@media (max-width: 767px) { .bx-beam, .bx-helix, .bx-sparks { left: 62%; opacity: .45; } }
 
-.h-terminal { background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: var(--r-lg); box-shadow: var(--shadow); }
-.h-term-head { display: flex; align-items: center; justify-content: space-between; padding: .7rem 1rem; border-bottom: 1px solid var(--border);
-    font-family: var(--font-mono); font-size: .68rem; letter-spacing: .08em; color: var(--text-muted); text-transform: uppercase; }
-.h-term-dots { display: flex; gap: 5px; } .h-term-dots i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--border-strong); }
-.h-term-main { padding: 1.4rem 1.25rem 1.1rem; }
-.h-term-price { font-family: var(--font-mono); font-weight: 500; font-size: clamp(1.9rem, 4vw, 2.6rem); letter-spacing: -.05em; line-height: 1.05; }
-.h-term-rows { border-top: 1px solid var(--border); }
-.h-term-row { display: flex; justify-content: space-between; padding: .75rem 1.25rem; font-family: var(--font-mono); font-size: .8rem; border-bottom: 1px solid var(--border); }
-.h-term-row:last-child { border-bottom: 0; } .h-term-row span:first-child { color: var(--text-muted); }
+.bx-copy { min-width: 0; max-width: 52rem; padding-bottom: clamp(2.5rem, 6vw, 4.5rem); }
+.bx-title { font-family: var(--font-display); font-weight: 500; letter-spacing: -.045em; line-height: 1.04; font-size: clamp(2.4rem, 5.6vw, 4.7rem); margin: 0 0 1.4rem; color: #fff; max-width: 13em; }
+.bx-chips { display: inline-flex; vertical-align: middle; margin: 0 .1em; transform: translateY(-.04em); }
+.bx-chips i { width: 1.05em; height: 1.05em; border-radius: 50%; display: grid; place-items: center; font-size: .5em; background: #0d1b20; border: 2px solid rgba(255,255,255,.14); color: #2de2e6; }
+.bx-chips i + i { margin-left: -.22em; }
+.bx-lead { color: #8fa8ad; font-size: 1rem; line-height: 1.7; max-width: 33rem; margin: 0 0 1.9rem; }
+.bx-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem; }
+.bx-link { color: #8fa8ad; font-size: .9rem; text-decoration: none; border-bottom: 1px solid rgba(143,168,173,.4); padding-bottom: 2px; transition: color .15s; }
+.bx-link:hover { color: #fff; border-color: #2de2e6; }
 
-.h-stats { border-top: 1px solid var(--border); position: relative; background: var(--bg); }
-.h-stat { padding: 1.5rem 0 1.5rem 1.25rem; border-left: 1px solid var(--border); }
+/* dashboard preview */
+.bx-dash { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; margin: 0 clamp(-1rem, -2vw, 0rem); border-radius: 22px 22px 0 0; overflow: hidden; background: #050d11;
+    border: 1px solid rgba(160,250,252,.75); border-bottom: 0; box-shadow: 0 0 0 4px rgba(45,226,230,.12), 0 0 60px 4px rgba(45,226,230,.55), inset 0 0 40px rgba(45,226,230,.06); }
+@media (min-width: 900px) { .bx-dash { grid-template-columns: 230px minmax(0, 1fr); } }
+.bx-d-side { display: none; padding: 1.1rem .9rem; border-right: 1px solid var(--border); background: #040b0e; }
+@media (min-width: 900px) { .bx-d-side { display: block; } }
+.bx-d-brand { display: flex; gap: .6rem; align-items: center; margin-bottom: 1.6rem; }
+.bx-d-brand img { width: 26px; height: 26px; border-radius: 7px; } .bx-d-brand b { display: block; font-size: .8rem; } .bx-d-brand small { color: var(--text-light); font-size: .68rem; }
+.bx-d-nav { display: grid; gap: .15rem; font-size: .8rem; color: var(--text-muted); }
+.bx-d-nav span { display: flex; align-items: center; gap: .65rem; padding: .6rem .7rem; border-radius: 9px; }
+.bx-d-nav span.on { background: linear-gradient(90deg, rgba(45,226,230,.2), rgba(45,226,230,.04)); color: #fff; box-shadow: inset 2px 0 0 #2de2e6; }
+.bx-d-nav span.sub { padding: .25rem .7rem .25rem 2.2rem; font-size: .74rem; color: var(--text-light); }
+.bx-d-nav p { margin: 1rem .7rem .3rem; font-family: var(--font-mono); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-light); }
+.bx-d-main { padding: 1rem clamp(.75rem, 2vw, 1.4rem) 0; min-width: 0; }
+.bx-d-top { display: flex; align-items: center; gap: .6rem; margin-bottom: 1.2rem; }
+.bx-d-search { flex: 1; max-width: 330px; display: flex; align-items: center; gap: .6rem; padding: .6rem .85rem; border: 1px solid var(--border); border-radius: 10px; color: var(--text-light); font-size: .78rem; background: #070f13; }
+.bx-d-search kbd { margin-left: auto; font-family: inherit; border: 1px solid var(--border); border-radius: 6px; padding: 0 .4rem; }
+.bx-d-perf { margin-left: auto; display: none; align-items: center; gap: 2rem; padding: .6rem .85rem; border: 1px solid var(--border); border-radius: 10px; font-size: .78rem; background: #070f13; }
+@media (min-width: 640px) { .bx-d-perf { display: flex; } }
+.bx-d-ic { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 10px; font-size: .8rem; background: #070f13; margin-left: auto; }
+.bx-d-perf + .bx-d-ic { margin-left: 0; }
+.bx-d-ic + .bx-d-ic { margin-left: 0; }
+.bx-d-av { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #2de2e6, #6d5bff); color: #021014; font-weight: 700; display: grid; place-items: center; font-size: .8rem; flex-shrink: 0; }
+.bx-d-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1.5rem; margin-bottom: 1rem; }
+.bx-d-head h3 { margin: 0; font-size: 1rem; font-weight: 500; }
+.bx-d-meta { display: none; gap: 1.6rem; font-size: .74rem; color: var(--text-muted); }
+@media (min-width: 700px) { .bx-d-meta { display: flex; } }
+.bx-d-meta b { font-weight: 500; margin-left: .25rem; } .pos { color: var(--pos); } .neg { color: var(--neg); }
+.bx-d-body { display: grid; gap: .9rem; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 760px) { .bx-d-body { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); } }
+.bx-d-chart, .bx-d-swap { border: 1px solid var(--border); border-radius: 14px; background: #070f13; padding: 1rem; min-width: 0; }
+.bx-d-price { display: flex; align-items: center; gap: .7rem; margin-bottom: .6rem; flex-wrap: wrap; }
+.bx-d-price .coin { width: 26px; height: 26px; border-radius: 50%; background: #f7931a; color: #fff; display: grid; place-items: center; font-size: .8rem; }
+.bx-d-price b { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 500; letter-spacing: -.04em; display: block; line-height: 1.1; }
+.bx-d-price small { font-family: var(--font-mono); font-size: .68rem; }
+.bx-d-tf { margin-left: auto; display: flex; gap: .3rem; } .bx-d-tf span { font-size: .65rem; padding: .25rem .5rem; border-radius: 6px; background: #0d1a20; color: var(--text-muted); } .bx-d-tf .on { background: #1a2d34; color: #fff; }
+#bx-candles { width: 100%; height: 170px; display: block; }
+.bx-d-vol { display: flex; align-items: flex-end; gap: 3px; height: 54px; margin-top: .4rem; } .bx-d-vol i { flex: 1; background: rgba(143,168,173,.25); border-radius: 2px 2px 0 0; }
+.bx-d-swap { display: grid; gap: .5rem; align-content: start; position: relative; }
+.bx-d-box { display: flex; justify-content: space-between; align-items: flex-end; gap: .5rem; padding: .85rem; border: 1px solid var(--border); border-radius: 12px; background: #050d11; }
+.bx-d-box small { display: block; font-size: .7rem; color: var(--text-muted); margin-bottom: .25rem; } .bx-d-box b { font-family: var(--font-mono); font-weight: 400; font-size: 1.15rem; letter-spacing: -.04em; }
+.bx-d-box > span { font-size: .62rem; color: var(--text-light); }
+.bx-d-swapic { justify-self: center; margin: -1.1rem 0; position: relative; z-index: 1; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #050d11; border: 1px solid var(--border-strong); font-size: .7rem; transform: rotate(90deg); }
+.bx-d-rows { display: grid; gap: .3rem; margin-top: .8rem; font-family: var(--font-mono); font-size: .74rem; } .bx-d-rows div { display: flex; justify-content: space-between; color: var(--text-muted); } .bx-d-rows b { font-weight: 500; color: #fff; }
+.bx-d-btn { text-align: center; padding: .8rem; border-radius: 10px; font-size: .8rem; font-weight: 500; color: #fff; background: linear-gradient(180deg, #4b43c9, #2a2584); border: 1px solid rgba(255,255,255,.14); margin-top: .5rem; }
+.bx-d-body { padding-bottom: 1.4rem; }
+
+.h-stats { border-top: 0; position: relative; background: transparent; }
+.h-stat { padding: 1.6rem 0 1.6rem 1.25rem; border-left: 1px solid var(--border); }
 .h-stat:first-child { border-left: 0; padding-left: 0; }
-.h-stat b::after { content: ''; display: block; width: 28px; height: 4px; background: var(--pop); margin-top: .5rem; border: 1px solid var(--text-main); }
+.h-stat b::after { content: ''; display: block; width: 28px; height: 3px; background: var(--pop); margin-top: .55rem; border-radius: 3px; box-shadow: 0 0 12px var(--pop); }
 .h-stat b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: clamp(1.4rem, 3vw, 2.1rem); letter-spacing: -.05em; }
 .h-stat span { font-size: .78rem; color: var(--text-muted); }
 @media (max-width: 767px) { .h-stat:nth-child(3) { border-left: 0; padding-left: 0; } .h-stat:nth-child(n+3) { border-top: 1px solid var(--border); } }
@@ -142,7 +203,7 @@ html[data-theme="dark"] .platform-logo-card img { filter: grayscale(1) brightnes
 @media (min-width: 640px) { .p-grid { grid-template-columns: repeat(2, 1fr); } } @media (min-width: 1024px) { .p-grid { grid-template-columns: repeat(4, 1fr); } }
 .home-plan-card { border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1.6rem; background: var(--bg-card); display: flex; flex-direction: column; transition: border-color .15s, transform .2s; }
 .home-plan-card:hover { border-color: var(--text-main); transform: translateY(-3px); }
-.home-plan-card.featured { background: var(--pop); color: var(--on-pop); border-color: var(--text-main); box-shadow: 5px 5px 0 var(--text-main); }
+.home-plan-card.featured { background: linear-gradient(160deg, #2de2e6, #12a9b4); color: #021014; border-color: transparent; box-shadow: 0 0 50px -10px rgba(45,226,230,.7); }
 .home-plan-card.featured * { color: inherit !important; }
 .home-plan-tier { font-family: var(--font-mono); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted); }
 .home-plan-roi { font-family: var(--font-mono); font-size: 2.6rem; letter-spacing: -.07em; font-weight: 500; line-height: 1; }
@@ -174,13 +235,13 @@ html[data-theme="dark"] .platform-logo-card img { filter: grayscale(1) brightnes
 .faq-a-inner { overflow: hidden; color: var(--text-muted); font-size: .95rem; line-height: 1.7; max-width: 44rem; } .faq-item.open .faq-a-inner { padding-bottom: 1.5rem; }
 
 /* closing CTA — inverted block */
-.cta-block { background: var(--text-main); color: var(--bg); border-radius: var(--r-lg); padding: clamp(2.5rem, 7vw, 5.5rem) clamp(1.5rem, 5vw, 4rem); position: relative; overflow: hidden; }
+.cta-block { background: radial-gradient(70% 90% at 80% 110%, rgba(45,226,230,.45), transparent 70%), #02090c; color: #eaf6f7; border: 1px solid rgba(94,234,235,.25); border-radius: var(--r-lg); padding: clamp(2.5rem, 7vw, 5.5rem) clamp(1.5rem, 5vw, 4rem); position: relative; overflow: hidden; }
 .cta-block h2 { font-family: var(--font-display); font-weight: 600; letter-spacing: -.055em; line-height: .96; font-size: clamp(2.4rem, 7vw, 5.2rem); margin: 0 0 1.25rem; max-width: 14ch; }
 .cta-block p { opacity: .7; max-width: 32rem; margin-bottom: 2rem; line-height: 1.65; }
-.cta-block .btn-primary { background: var(--pop); color: var(--on-pop); border-color: var(--pop); box-shadow: none; }
+.cta-block .btn-primary { background: #2de2e6; color: #021014; border-color: #2de2e6; box-shadow: 0 0 40px -6px rgba(45,226,230,.7); }
 .cta-block .btn-primary:hover { background: var(--pop-hover); }
-.cta-block .btn-outline { color: var(--bg); border-color: color-mix(in srgb, var(--bg) 40%, transparent); }
-.cta-block .btn-outline:hover { background: var(--bg); color: var(--text-main); }
+.cta-block .btn-outline { color: #eaf6f7; border-color: rgba(234,246,247,.35); }
+.cta-block .btn-outline:hover { background: rgba(45,226,230,.15); color: #fff; border-color: #2de2e6; }
 .cta-meta { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin-top: 2.25rem; font-family: var(--font-mono); font-size: .7rem; letter-spacing: .05em; opacity: .65; text-transform: uppercase; }
 </style>
 {% endblock %}
@@ -188,34 +249,76 @@ html[data-theme="dark"] .platform-logo-card img { filter: grayscale(1) brightnes
 {% block content %}
 
 <!-- ═════════ HERO ═════════ -->
-<section class="h-hero">
-    <div class="wrap">
-        <div class="h-hero-grid">
-            <div>
-                <span class="eyebrow">Multi-asset trading platform</span>
-                <h1 class="h-title">One account.<br><span class="hl">Every</span> market.</h1>
-                <p class="h-lead">Trade stocks, crypto, forex and options from a single account. Copy proven traders, deploy bots, and keep your portfolio moving around the clock.</p>
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <a href="{% url 'register' %}" class="btn-pop" style="padding:.95rem 1.6rem;font-size:.9rem;">Open free account <i class="fas fa-arrow-right" style="font-size:.75rem;"></i></a>
-                    <a href="#how-it-works" class="btn-outline" style="padding:.95rem 1.6rem;font-size:.9rem;">See how it works</a>
-                </div>
-            </div>
+<section class="bx-hero">
+    <div class="bx-card">
+        <div class="bx-beam" aria-hidden="true"></div>
+        <svg class="bx-helix" viewBox="0 0 400 600" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+                <linearGradient id="hx" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#9ff8fb" stop-opacity="0"/>
+                    <stop offset=".45" stop-color="#9ff8fb" stop-opacity=".85"/>
+                    <stop offset="1" stop-color="#2de2e6" stop-opacity=".1"/>
+                </linearGradient>
+            </defs>
+            <path d="M120 0 C 330 150, 330 300, 200 420 S 70 560, 280 600" fill="none" stroke="url(#hx)" stroke-width="2.2"/>
+            <path d="M280 0 C 70 150, 70 300, 200 420 S 330 560, 120 600" fill="none" stroke="url(#hx)" stroke-width="2.2"/>
+            <path d="M160 0 C 360 160, 300 320, 200 430 S 40 560, 250 600" fill="none" stroke="url(#hx)" stroke-width="1" opacity=".6"/>
+            <path d="M240 0 C 40 160, 100 320, 200 430 S 360 560, 150 600" fill="none" stroke="url(#hx)" stroke-width="1" opacity=".6"/>
+        </svg>
+        <div class="bx-sparks" aria-hidden="true"></div>
 
-            <div class="h-terminal">
-                <div class="h-term-head">
-                    <span class="h-term-dots"><i></i><i></i><i></i></span>
-                    <span>BTC / USD · live</span>
-                    <span class="flex items-center gap-1.5"><span class="live-dot"></span>feed</span>
+        <div class="bx-copy">
+            <h1 class="bx-title">Powering the Future of Digital <span class="bx-chips" aria-hidden="true"><i class="fas fa-coins"></i><i class="fab fa-bitcoin"></i></span> Trading</h1>
+            <p class="bx-lead">Trade stocks, crypto, forex and options from one account. Copy proven traders, deploy bots and keep your portfolio moving around the clock — built for beginners and pros alike.</p>
+            <div class="bx-cta">
+                <a href="{% url 'register' %}" class="btn-glass">Get Started <i class="fas fa-arrow-right"></i></a>
+                <a href="#how-it-works" class="bx-link">See how it works</a>
+            </div>
+        </div>
+
+        <!-- Dashboard preview -->
+        <div class="bx-dash" aria-hidden="true">
+            <aside class="bx-d-side">
+                <div class="bx-d-brand"><img src="{% static 'platform_app/img/logo-mono.svg' %}" alt=""><div><b>Mirrormarket</b><small>Top crypto assets</small></div></div>
+                <div class="bx-d-nav">
+                    <span class="on"><i class="fas fa-th-large"></i> Dashboard</span>
+                    <span><i class="fas fa-chart-line"></i> Markets <i class="fas fa-chevron-up" style="margin-left:auto;font-size:.55rem;"></i></span>
+                    <span class="sub">Crypto</span><span class="sub">Forex</span><span class="sub">Stocks</span>
+                    <span><i class="fas fa-exchange-alt"></i> Trade</span>
+                    <span><i class="fas fa-copy"></i> Copy trading</span>
+                    <p>Account</p>
+                    <span><i class="fas fa-envelope"></i> Messages</span>
                 </div>
-                <div class="h-term-main">
-                    <div class="h-term-price" id="hero-btc-price">$--,---</div>
-                    <div class="mono text-sm mt-1" id="hero-btc-change" style="color:var(--pos);">+0.00%</div>
+            </aside>
+            <div class="bx-d-main">
+                <div class="bx-d-top">
+                    <div class="bx-d-search"><i class="fas fa-search"></i> Search <kbd>⌘</kbd></div>
+                    <div class="bx-d-perf">Total performance <i class="fas fa-chevron-down"></i></div>
+                    <span class="bx-d-ic"><i class="far fa-bell"></i></span>
+                    <span class="bx-d-ic"><i class="fas fa-cog"></i></span>
+                    <span class="bx-d-av">M</span>
                 </div>
-                <div class="h-term-rows">
-                    <div class="h-term-row"><span>ETH</span><span id="hero-eth">$---</span></div>
-                    <div class="h-term-row"><span>SOL</span><span id="hero-sol">$---</span></div>
-                    <div class="h-term-row"><span>Spread</span><span>from 0.0 pips</span></div>
-                    <div class="h-term-row"><span>Execution</span><span>&lt; 1 sec</span></div>
+                <div class="bx-d-head">
+                    <h3>Dashboard Activity</h3>
+                    <div class="bx-d-meta"><span>Exchanges <b class="neg">480</b></span><span>Market cap <b class="pos">$830,257.80</b></span><span>24h vol <b class="pos">$830,257.80</b></span></div>
+                </div>
+                <div class="bx-d-body">
+                    <div class="bx-d-chart">
+                        <div class="bx-d-price">
+                            <span class="coin"><i class="fab fa-bitcoin"></i></span>
+                            <div><b id="hero-btc-price">$--,---</b><small id="hero-btc-change" class="pos">+0.00%</small></div>
+                            <div class="bx-d-tf"><span>30h</span><span>1D</span><span class="on">1W</span><span>1Y</span></div>
+                        </div>
+                        <svg id="bx-candles" viewBox="0 0 520 200" preserveAspectRatio="none"></svg>
+                        <div class="bx-d-vol" id="bx-vol"></div>
+                    </div>
+                    <div class="bx-d-swap">
+                        <div class="bx-d-box"><div><small>Bitcoin</small><b>0.073658</b></div><span>Balance <i class="pos">38506</i></span></div>
+                        <span class="bx-d-swapic"><i class="fas fa-exchange-alt"></i></span>
+                        <div class="bx-d-box"><div><small>Ethereum</small><b>0.0865892</b></div><span>Balance <i class="pos">38506</i></span></div>
+                        <div class="bx-d-rows"><div><span>ETH</span><b id="hero-eth">$---</b></div><div><span>SOL</span><b id="hero-sol">$---</b></div></div>
+                        <div class="bx-d-btn">Sell Now</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -232,6 +335,25 @@ html[data-theme="dark"] .platform-logo-card img { filter: grayscale(1) brightnes
         </div>
     </div>
 </section>
+
+<script>
+/* decorative candlesticks for the hero preview (not market data) */
+(function () {
+    var svg = document.getElementById('bx-candles'), vol = document.getElementById('bx-vol');
+    if (!svg) return;
+    var seed = 7, rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    var n = 46, w = 520, h = 200, step = w / n, v = 110, out = '', bars = '';
+    for (var i = 0; i < n; i++) {
+        var o = v, c = v + (rnd() - 0.46) * 38; c = Math.max(30, Math.min(170, c)); v = c;
+        var hi = Math.max(o, c) + rnd() * 14, lo = Math.min(o, c) - rnd() * 14, up = c >= o;
+        var col = up ? '#3eeaa4' : '#7c6cff', x = i * step + step / 2;
+        out += '<line x1="' + x + '" x2="' + x + '" y1="' + (h - hi) + '" y2="' + (h - lo) + '" stroke="' + col + '" stroke-width="1.2"/>' +
+               '<rect x="' + (x - step * 0.3) + '" y="' + (h - Math.max(o, c)) + '" width="' + (step * 0.6) + '" height="' + Math.max(2, Math.abs(c - o)) + '" rx="1" fill="' + col + '"/>';
+        bars += '<i style="height:' + (18 + rnd() * 82) + '%"></i>';
+    }
+    svg.innerHTML = out; vol.innerHTML = bars;
+})();
+</script>
 
 <!-- ═════════ TICKER ═════════ -->
 <div class="h-ticker">

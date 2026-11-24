@@ -333,6 +333,26 @@ class SupportInboxTests(TestCase):
         unread = self.client.get(reverse('admin_support_list_json') + '?status=unread').json()['chats']
         self.assertEqual(len(unread), 2)
 
+    def test_inbox_hides_chats_nobody_has_written_in(self):
+        lurker = make_user('lurker', 'lurker@example.com')
+        SupportChat.objects.create(user=lurker)                       # opened the bubble, said nothing
+        greeted = make_user('greeted', 'greeted@example.com')
+        g = SupportChat.objects.create(user=greeted)                  # only the automatic greeting
+        SupportMessage.objects.create(chat=g, sender_type='SUPPORT', sender_name='Support Team', message='Hello! Thanks for reaching out.')
+        botted = make_user('botted', 'botted@example.com')
+        b = SupportChat.objects.create(user=botted)
+        SupportMessage.objects.create(chat=b, sender_type='SUPPORT', sender_name='Support Bot', message='auto reply')
+        names = {r['username'] for r in self.client.get(reverse('admin_support_list_json')).json()['chats']}
+        self.assertEqual(names, {'bob', 'cat'})
+
+    def test_chat_appears_once_the_customer_writes_or_an_admin_messages(self):
+        quiet = make_user('quiet', 'quiet@example.com')
+        q = SupportChat.objects.create(user=quiet)
+        listed = lambda: {r['username'] for r in self.client.get(reverse('admin_support_list_json')).json()['chats']}
+        self.assertNotIn('quiet', listed())
+        self.send(q, 'Hi, anything I can help with?')
+        self.assertIn('quiet', listed())
+
     def test_reply_is_saved_marks_read_and_emails_customer(self):
         res = self.send(self.bob_chat, 'Checking your payment now')
         self.assertEqual(res.status_code, 200)
@@ -432,3 +452,53 @@ class SupportInboxTests(TestCase):
         res = self.client.get(reverse('admin_chat_detail', args=[self.bob_chat.id]))
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, 'id="ibThread"')
+
+
+class CopyTradingRulesTests(TestCase):
+    """One copy per trader per account, and copy trading is locked until the first deposit."""
+
+    def setUp(self):
+        PlatformSettings.objects.create(copy_trade_auto_invest=True)
+        self.trader = CopyTrader.objects.create(
+            name='Tomi', country='X', country_flag='x', rating=Decimal('4.5'),
+            profit_percentage_per_day=Decimal('1'), roi=Decimal('10'), commission_percentage=Decimal('10'),
+        )
+        CopyTraderPlan.objects.create(trader=self.trader, tier='SILVER', price=Decimal('50'),
+                                      commission_percentage=Decimal('10'))
+        self.url = reverse('copy_trader_detail', args=[self.trader.id])
+
+    def test_locked_until_first_deposit(self):
+        user = make_user(account_balance=Decimal('500'), total_deposit=Decimal('0'))  # e.g. bonus only
+        self.client.force_login(user)
+        r = self.client.post(self.url)
+        self.assertFalse(r.json()['success'])
+        self.assertIn('locked', r.json()['message'])
+        self.assertFalse(CopyTradingSubscription.objects.exists())
+
+        page = self.client.get(reverse('copy_trading')).content.decode()
+        self.assertIn('Copy trading is locked', page)
+        self.assertIn('Deposit to unlock', self.client.get(self.url).content.decode())
+
+    def test_deposited_user_can_copy_once_only(self):
+        user = make_user(account_balance=Decimal('300'), total_deposit=Decimal('300'))
+        self.client.force_login(user)
+        self.assertTrue(self.client.post(self.url).json()['success'])
+        self.assertEqual(CopyTradingSubscription.objects.filter(user=user, trader=self.trader).count(), 1)
+
+        user.refresh_from_db()
+        user.account_balance = user.total_deposit = Decimal('300')  # top up and try again
+        user.save()
+        r = self.client.post(self.url)
+        self.assertFalse(r.json()['success'])
+        self.assertIn('already copied', r.json()['message'])
+        self.assertEqual(CopyTradingSubscription.objects.filter(user=user, trader=self.trader).count(), 1)
+
+        self.assertIn('Already copied', self.client.get(reverse('copy_trading')).content.decode())
+
+    def test_stopped_copy_still_counts(self):
+        user = make_user(account_balance=Decimal('300'), total_deposit=Decimal('300'))
+        self.client.force_login(user)
+        CopyTradingSubscription.objects.create(user=user, trader=self.trader, amount_invested=Decimal('50'),
+                                               commission_paid=Decimal('5'), is_active=False)
+        self.assertFalse(self.client.post(self.url).json()['success'])
+        self.assertEqual(CopyTradingSubscription.objects.filter(user=user).count(), 1)

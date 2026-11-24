@@ -713,12 +713,28 @@ def copy_trading(request):
         user=request.user, is_active=True
     ).select_related('trader', 'plan')
     copy_trading_balance = sum((sub.amount_invested for sub in active_copy_trades), Decimal('0'))
+    # Every trader this account has ever copied (active or not) - one copy per trader, ever.
+    copied_trader_ids = set(
+        CopyTradingSubscription.objects.filter(user=request.user).values_list('trader_id', flat=True)
+    )
     context = {
         'traders': traders,
         'active_copy_trades': active_copy_trades,
         'copy_trading_balance': copy_trading_balance,
+        'has_deposited': _has_deposited(request.user),
+        'copied_trader_ids': copied_trader_ids,
     }
     return render(request, 'copy_trading.html', context)
+
+
+def _has_deposited(user):
+    """Copy trading stays locked until the account has made a deposit."""
+    return user.total_deposit > 0
+
+
+def _already_copied(user, trader):
+    """An account can only ever start one copy-trading subscription per trader."""
+    return CopyTradingSubscription.objects.filter(user=user, trader=trader).exists()
 
 
 def _parse_amount(raw, places=Decimal('0.01')):
@@ -794,6 +810,12 @@ def copy_trader_detail(request, trader_id):
             request.user = User.objects.select_for_update().get(pk=request.user.pk)
             copyable_amount = min(request.user.account_balance, request.user.total_deposit)
 
+            if not _has_deposited(request.user):
+                return JsonResponse({'success': False, 'message': 'Copy trading is locked until you make your first deposit.'})
+
+            if _already_copied(request.user, trader):
+                return JsonResponse({'success': False, 'message': f'You have already copied {trader.name}. Each account can only copy a trader once.'})
+
             if auto_invest:
                 amount = copyable_amount
                 if amount <= 0:
@@ -849,6 +871,8 @@ def copy_trader_detail(request, trader_id):
         'auto_invest': auto_invest,
         'copyable_amount': copyable_amount,
         'min_investment': min_investment,
+        'has_deposited': _has_deposited(request.user),
+        'already_copied': _already_copied(request.user, trader),
     }
     return render(request, 'copy_trader_detail.html', context)
 

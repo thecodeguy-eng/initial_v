@@ -1,5 +1,5 @@
 {% load static %}<!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,7 @@
         (function () {
             var t = null;
             try { t = localStorage.getItem("theme"); } catch (e) {}
-            if (t !== "light" && t !== "dark") t = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            if (t !== "light" && t !== "dark") t = "dark";
             document.documentElement.setAttribute("data-theme", t);
         })();
     </script>
@@ -39,7 +39,6 @@
 
         .ad-brand { display: flex; align-items: center; gap: .65rem; padding: 1.1rem 1.1rem 1rem; text-decoration: none; }
         .ad-brand img { width: 28px; height: 28px; }
-        html[data-theme="dark"] .ad-brand img { filter: invert(1); }
         .ad-brand b { font-family: var(--font-display); font-size: 1rem; letter-spacing: -.03em; display: block; line-height: 1.1; }
         .ad-brand small { font-family: var(--font-mono); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-light); }
 
